@@ -12,6 +12,7 @@ import android.widget.Toast;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMapOptions;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
@@ -102,7 +103,6 @@ public class MapsActivity extends FragmentActivity implements LocationProvider.L
             mMap = ((MapFragment) getFragmentManager().findFragmentById(R.id.map)).getMap();
 
 
-
             // check if map is created successfully or not
             if (mMap == null) {
                 Toast.makeText(getApplicationContext(),
@@ -124,6 +124,11 @@ public class MapsActivity extends FragmentActivity implements LocationProvider.L
     }
 
     public void positioncheck() {
+
+        mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+        mMap.getUiSettings().setCompassEnabled(true);
+        mMap.getUiSettings().setMyLocationButtonEnabled(true);
+        mMap.getUiSettings().setZoomControlsEnabled(true);
 
         // check if GPS enabled
         if(nettracker.canGetLocation()){
