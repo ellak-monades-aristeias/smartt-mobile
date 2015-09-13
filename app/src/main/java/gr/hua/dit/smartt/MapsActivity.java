@@ -1,39 +1,86 @@
 package gr.hua.dit.smartt;
 
-import android.Manifest;
 import android.content.Context;
-import android.content.pm.PackageManager;
-import android.location.Criteria;
 import android.location.Location;
-import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
+import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Marker;
 
-public class MapsActivity extends FragmentActivity {
+
+
+public class MapsActivity extends FragmentActivity implements LocationProvider.LocationCallback {
+
+    public static final String TAG = MapsActivity.class.getSimpleName();
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
+
+    GPSTracker gps;
+    NetworkTracker nettracker;
+
+    CameraUpdate cameraUpdate;
+    MarkerOptions marker = new MarkerOptions();
+    Marker positionmarker;
+    Utilities ut = new Utilities(this);
+
+    private LocationProvider mLocationProvider;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-        setUpMapIfNeeded();
+        //setUpMapIfNeeded();
+
+        mLocationProvider = new LocationProvider(this, this);
+
+        nettracker = new NetworkTracker(MapsActivity.this);
+        gps = new GPSTracker(MapsActivity.this);
+
+        try {
+            // Loading map
+            initilizeMap();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+
+        nettracker.getLocation();
+        gps = new GPSTracker(MapsActivity.this);
         setUpMapIfNeeded();
+        mLocationProvider.connect();
+
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mLocationProvider.disconnect();
+        initilizeMap();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        nettracker.stopUsingGPS();
+    }
     /**
      * Sets up the map if it is possible to do so (i.e., the Google Play services APK is correctly
      * installed) and the map has not already been instantiated.. This will ensure that we only ever
@@ -49,6 +96,76 @@ public class MapsActivity extends FragmentActivity {
      * stopped or paused), {@link #onCreate(Bundle)} may not be called again so we should call this
      * method in {@link #onResume()} to guarantee that it will be called.
      */
+
+    private void initilizeMap() {
+        if (mMap == null) {
+            mMap = ((MapFragment) getFragmentManager().findFragmentById(R.id.map)).getMap();
+
+
+
+            // check if map is created successfully or not
+            if (mMap == null) {
+                Toast.makeText(getApplicationContext(),
+                        "Sorry! unable to create maps", Toast.LENGTH_SHORT)
+                        .show();
+            }
+            if((!nettracker.isGPSEnabled)&&isOnline()){
+                nettracker.showSettingsAlert();
+            }
+            positioncheck();
+        }
+        if(ut.loadStoredValue("map_type", "normal").equals("normal")) {
+            mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+        }else if(ut.loadStoredValue("map_type", "normal").equals("hybrid")) {
+            mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+        }else if(ut.loadStoredValue("map_type", "normal").equals("terrain")) {
+            mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+        }
+    }
+
+    public void positioncheck() {
+
+        // check if GPS enabled
+        if(nettracker.canGetLocation()){
+
+            final double latitude = nettracker.getLatitude();
+            final double longitude = nettracker.getLongitude();
+
+
+
+            marker = new MarkerOptions().position(new LatLng(latitude, longitude));
+            // adding marker
+            positionmarker = mMap.addMarker(marker);
+
+            if(isOnline()) {
+                cameraUpdate = CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 11);
+            }else {
+                cameraUpdate = CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 13);
+            }
+
+            mMap.animateCamera(cameraUpdate);
+
+            nettracker.getLocation();
+            if(nettracker.appAccuracy > 100 && nettracker.appAccuracy!=999) {
+                if(!nettracker.isGPSEnabled) {
+                    nettracker.showBadAccuracyAlert();
+                }else {
+                    Toast.makeText(getApplicationContext(), "message!", Toast.LENGTH_LONG).show();
+                }
+            }
+        }
+    }
+
+    public boolean isOnline() {
+        ConnectivityManager cm =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        if (netInfo != null && netInfo.isConnectedOrConnecting()) {
+            return true;
+        }
+        return false;
+    }
+
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map.
         if (mMap == null) {
@@ -68,65 +185,22 @@ public class MapsActivity extends FragmentActivity {
      * <p/>
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
-
     private void setUpMap() {
-        mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker").snippet("Snippet"));
+        //mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
+    }
 
-        // Enable MyLocation Layer of Google Map
-        mMap.setMyLocationEnabled(true);
+    public void handleNewLocation(Location location) {
+        Log.d(TAG, location.toString());
 
-        // Get LocationManager object from System Service LOCATION_SERVICE
-        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        double currentLatitude = location.getLatitude();
+        double currentLongitude = location.getLongitude();
+        LatLng latLng = new LatLng(currentLatitude, currentLongitude);
 
-        // Create a criteria object to retrieve provider
-        Criteria criteria = new Criteria();
-
-        // Get the name of the best provider
-        String provider = locationManager.getBestProvider(criteria, true);
-
-        // Get Current Location
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    public void requestPermissions(@NonNull String[] permissions, int requestCode)
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for Activity#requestPermissions for more details.
-            return;
-        }
-        Location myLocation = locationManager.getLastKnownLocation(provider);
-
-        // set map type
-        mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
-
-        // Get latitude of the current location
-        double latitude = myLocation.getLatitude();
-
-        // Get longitude of the current location
-        double longitude = myLocation.getLongitude();
-
-        // Create a LatLng object for the current location
-        LatLng latLng = new LatLng(latitude, longitude);
-
-        // Show the current location in Google Map
+        //mMap.addMarker(new MarkerOptions().position(new LatLng(currentLatitude, currentLongitude)).title("Current Location"));
+        MarkerOptions options = new MarkerOptions()
+                .position(latLng)
+                .title("I am here!");
+        mMap.addMarker(options);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-
-        // Zoom in the Google Map
-        mMap.animateCamera(CameraUpdateFactory.zoomTo(14));
-        mMap.addMarker(new MarkerOptions().position(new LatLng(latitude, longitude)).title("You are here!").snippet("Consider yourself located"));
-
-        LatLng myCoordinates = new LatLng(latitude, longitude);
-        CameraUpdate yourLocation = CameraUpdateFactory.newLatLngZoom(myCoordinates, 12);
-        mMap.animateCamera(yourLocation);
-
-        CameraPosition cameraPosition = new CameraPosition.Builder()
-                .target(myCoordinates)      // Sets the center of the map to LatLng (refer to previous snippet)
-                .zoom(17)                   // Sets the zoom
-                .bearing(90)                // Sets the orientation of the camera to east
-                .tilt(30)                   // Sets the tilt of the camera to 30 degrees
-                .build();                   // Creates a CameraPosition from the builder
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-
     }
 }
