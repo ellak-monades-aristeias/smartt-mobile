@@ -48,9 +48,16 @@ public class MapsActivity extends FragmentActivity implements LocationProvider.L
         nettracker = new NetworkTracker(MapsActivity.this);
         gps = new GPSTracker(MapsActivity.this);
 
+
         try {
             // Loading map
             initilizeMap();
+            Toast.makeText(getApplicationContext(),
+                    String.valueOf(mMap.getMyLocation().getLatitude()
+                    ),
+                    Toast.LENGTH_SHORT)
+                    .show();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -67,6 +74,7 @@ public class MapsActivity extends FragmentActivity implements LocationProvider.L
         gps = new GPSTracker(MapsActivity.this);
         setUpMapIfNeeded();
         mLocationProvider.connect();
+
 
     }
 
@@ -114,6 +122,24 @@ public class MapsActivity extends FragmentActivity implements LocationProvider.L
             }
             positioncheck();
         }
+        mMap.setMyLocationEnabled(true);
+        mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
+            @Override
+            public boolean onMyLocationButtonClick() {
+                Log.i("LOCATION", "in button click");
+                Toast.makeText(
+                        getApplicationContext(),
+                        "Accuracy " + String.valueOf(mMap.getMyLocation().getAccuracy()) + "\n" +
+                        "Lat " + String.valueOf(mMap.getMyLocation().getLatitude()) + "\n" +
+                        "Lon " + String.valueOf(mMap.getMyLocation().getLongitude()),
+                        Toast.LENGTH_SHORT).show();
+
+                return true;
+            }
+        });
+
+
+
         if(ut.loadStoredValue("map_type", "normal").equals("normal")) {
             mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         }else if(ut.loadStoredValue("map_type", "normal").equals("hybrid")) {
@@ -130,6 +156,7 @@ public class MapsActivity extends FragmentActivity implements LocationProvider.L
         mMap.getUiSettings().setMyLocationButtonEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(true);
 
+
         // check if GPS enabled
         if(nettracker.canGetLocation()){
 
@@ -142,6 +169,8 @@ public class MapsActivity extends FragmentActivity implements LocationProvider.L
             // adding marker
             positionmarker = mMap.addMarker(marker);
 
+
+
             if(isOnline()) {
                 cameraUpdate = CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 11);
             }else {
@@ -151,6 +180,8 @@ public class MapsActivity extends FragmentActivity implements LocationProvider.L
             mMap.animateCamera(cameraUpdate);
 
             nettracker.getLocation();
+
+
             if(nettracker.appAccuracy > 100 && nettracker.appAccuracy!=999) {
                 if(!nettracker.isGPSEnabled) {
                     nettracker.showBadAccuracyAlert();
