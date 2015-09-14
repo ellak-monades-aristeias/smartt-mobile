@@ -123,20 +123,26 @@ public class MapsActivity extends FragmentActivity implements LocationProvider.L
             positioncheck();
         }
         mMap.setMyLocationEnabled(true);
-        mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
-            @Override
-            public boolean onMyLocationButtonClick() {
-                Log.i("LOCATION", "in button click");
-                Toast.makeText(
-                        getApplicationContext(),
-                        "Accuracy " + String.valueOf(mMap.getMyLocation().getAccuracy()) + "\n" +
-                        "Lat " + String.valueOf(mMap.getMyLocation().getLatitude()) + "\n" +
-                        "Lon " + String.valueOf(mMap.getMyLocation().getLongitude()),
-                        Toast.LENGTH_SHORT).show();
 
-                return true;
-            }
-        });
+
+            mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
+                @Override
+                public boolean onMyLocationButtonClick() {
+                    Log.i("LOCATION", "in button click");
+                    if (mMap.getMyLocation() != null) {
+                    Toast.makeText(
+                            getApplicationContext(),
+                            "Accuracy " + String.valueOf(mMap.getMyLocation().getAccuracy()) + "\n" +
+                                    "Lat " + String.valueOf(mMap.getMyLocation().getLatitude()) + "\n" +
+                                    "Lon " + String.valueOf(mMap.getMyLocation().getLongitude()),
+                            Toast.LENGTH_SHORT).show();
+
+                    LatLng latlon = new LatLng(mMap.getMyLocation().getLatitude(), mMap.getMyLocation().getLongitude());
+                    mMap.moveCamera(CameraUpdateFactory.newLatLng(latlon));
+                    mMap.animateCamera(CameraUpdateFactory.zoomTo(13));}
+                    return true;
+                }
+            });
 
 
 
