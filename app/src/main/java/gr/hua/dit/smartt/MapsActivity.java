@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 //import android.support.v4.widget.DrawerLayout;
 //import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -44,7 +45,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 
-public class MapsActivity extends  ActionBarActivity implements LocationProvider.LocationCallback {
+public class MapsActivity extends AppCompatActivity implements LocationProvider.LocationCallback {
     private ListView mDrawerList;
     private DrawerLayout mDrawerLayout;
     private ArrayAdapter<String> mAdapter;
@@ -73,7 +74,8 @@ public class MapsActivity extends  ActionBarActivity implements LocationProvider
         setContentView(R.layout.activity_maps);
         //setUpMapIfNeeded();
 
-        mDrawerList = (ListView)findViewById(R.id.navList);mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
+        mDrawerList = (ListView)findViewById(R.id.navList);
+        mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
         mActivityTitle = getTitle().toString();
 
         addDrawerItems();
@@ -131,14 +133,27 @@ public class MapsActivity extends  ActionBarActivity implements LocationProvider
     }
 
     private void addDrawerItems() {
-        String[] osArray = { "Android", "iOS", "Windows", "OS X", "Linux" };
+        final String[] osArray = { "Android", "iOS", "Windows", "OS X", "Linux" };
         mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, osArray);
         mDrawerList.setAdapter(mAdapter);
 
         mDrawerList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Toast.makeText(MapsActivity.this, "Time for an upgrade!", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(MapsActivity.this, "Time for an upgrade!", Toast.LENGTH_SHORT).show();
+
+                final double latitude = 37.98392;
+                final double longitude = 23.72936;
+                Log.i("RG", String.valueOf(id) + ' ' + String.valueOf(position) + ' ' + String.valueOf(osArray[position]));
+                mMap.clear();
+
+                if (id == 1){
+                    Toast.makeText(MapsActivity.this, "IOS!", Toast.LENGTH_SHORT).show();
+                }
+                marker = new MarkerOptions().position(new LatLng(latitude, longitude));
+                // adding marker
+                positionmarker = mMap.addMarker(marker);
+
             }
         });
     }
