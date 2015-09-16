@@ -1,6 +1,7 @@
 package gr.hua.dit.smartt;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.location.Location;
 import android.net.ConnectivityManager;
@@ -133,7 +134,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     }
 
     private void addDrawerItems() {
-        final String[] osArray = { "Android", "iOS", "Windows", "OS X", "Linux" };
+        final String[] osArray = { "Login", "iOS", "Windows", "OS X", "Linux" };
         mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, osArray);
         mDrawerList.setAdapter(mAdapter);
 
@@ -146,6 +147,13 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 final double longitude = 23.72936;
                 Log.i("RG", String.valueOf(id) + ' ' + String.valueOf(position) + ' ' + String.valueOf(osArray[position]));
                 mMap.clear();
+
+
+                if (id == 0){
+
+                    Intent intent=new Intent("gr.hua.dit.smartt.LOGIN");
+                    startActivity(intent);
+                }
 
                 if (id == 1){
                     Toast.makeText(MapsActivity.this, "IOS!", Toast.LENGTH_SHORT).show();
