@@ -6,6 +6,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.LoaderManager.LoaderCallbacks;
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.CursorLoader;
 import android.content.Loader;
 import android.database.Cursor;
@@ -40,7 +41,9 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A login screen that offers login via email/password.
@@ -271,73 +274,44 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            try {
-                InputStream stream = null;
-                URL url = new URL("http://83.212.116.159/smartt/backend/api/user/register");
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-
-                OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream());
-                String urlParameters = "email="+mEmail;
-                urlParameters += "&device_id="+"AAABBBCCCDDDEEE";
-                urlParameters += "&password="+mPassword;
-                writer.write(urlParameters);
-                writer.flush();
-                writer.close();
-                if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                    stream = conn.getInputStream();
-                    Log.i("RG200", String.valueOf(urlParameters));
-                    Log.i("RG200-", String.valueOf(conn.getResponseCode()));
-                    Log.i("RG-res", String.valueOf(stream));
 
 
-
-                    try {
-                        StringBuffer output = new StringBuffer("");
-                        BufferedReader buffer = new BufferedReader(
-                                new InputStreamReader(stream));
-                        String s = "";
-                        while ((s = buffer.readLine()) != null)
-                            output.append(s);
-
-                        Log.i("RG-out", String.valueOf(output));
-                        String result=output.toString();
-
-                        JSONObject jObject = new JSONObject(result);
-                        String status = jObject.getString("status");
-                        String message = jObject.getString("message");
-                        Log.i("RG-status", String.valueOf(status));
-                        Log.i("RG-message", String.valueOf(message));
-
-
-                        Toast.makeText(LoginActivity.this, "status: " + status +"\n message :" + message, Toast.LENGTH_SHORT).show();
-
-
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    } catch (JSONException e) {
-                        e.printStackTrace();
+                String requestURL = "http://www.google.com";
+                try {
+                    HttpUtility.sendGetRequest(requestURL);
+                    String[] response = HttpUtility.readMultipleLinesRespone();
+                    for (String line : response) {
+                        System.out.println(line);
                     }
-
-
-                    return true;
+                } catch (IOException ex) {
+                    ex.printStackTrace();
                 }
-                else{
-                    Log.i("RG", String.valueOf(urlParameters));
-                    Log.i("RG", String.valueOf(conn.getResponseCode()));
-                    Log.i("RG-res", String.valueOf(conn.getResponseMessage()));
+                HttpUtility.disconnect();
 
-                    return false;
 
+                System.out.println("=====================================");
+
+                // test sending POST request
+                Map<String, String> params1 = new HashMap<String, String>();
+                requestURL = "http://83.212.116.159/smartt/backend/api/user/register";
+                params1.put("email", mEmail);
+                params1.put("password", mPassword);
+                params1.put("device_id", "AAABBBCCCDDDEEE");
+
+                try {
+                    HttpUtility.sendPostRequest(requestURL, params1);
+                    String[] response = HttpUtility.readMultipleLinesRespone();
+                    for (String line : response) {
+                        System.out.println(line);
+                        Log.i("RG-res", String.valueOf(line));
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
                 }
+                HttpUtility.disconnect();
 
 
-
-
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
+            return true;
         }
 
         @Override
