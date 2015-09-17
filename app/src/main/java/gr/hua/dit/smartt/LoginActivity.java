@@ -26,6 +26,10 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -274,9 +278,9 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
                 conn.setRequestMethod("POST");
 
                 OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream());
-                String urlParameters = "email="+"tsadimas@hua.gr";
+                String urlParameters = "email="+mEmail;
                 urlParameters += "&device_id="+"AAABBBCCCDDDEEE";
-                urlParameters += "&password="+"11111111";
+                urlParameters += "&password="+mPassword;
                 writer.write(urlParameters);
                 writer.flush();
                 writer.close();
@@ -297,14 +301,26 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
                             output.append(s);
 
                         Log.i("RG-out", String.valueOf(output));
+                        String result=output.toString();
+
+                        JSONObject jObject = new JSONObject(result);
+                        String status = jObject.getString("status");
+                        String message = jObject.getString("message");
+                        Log.i("RG-status", String.valueOf(status));
+                        Log.i("RG-message", String.valueOf(message));
+
+
+                        Toast.makeText(LoginActivity.this, "status: " + status +"\n message :" + message, Toast.LENGTH_SHORT).show();
+
+
                     } catch (IOException e1) {
                         e1.printStackTrace();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
 
 
-
-
-                return true;
+                    return true;
                 }
                 else{
                     Log.i("RG", String.valueOf(urlParameters));
