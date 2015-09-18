@@ -93,12 +93,17 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
         try {
             // Loading map
+            Log.i("RG", "Loading the map");
             initilizeMap();
+            Log.i("RG", "After Loading the map");
+
             Toast.makeText(getApplicationContext(),
                     String.valueOf(mMap.getMyLocation().getLatitude()
                     ),
                     Toast.LENGTH_SHORT)
                     .show();
+
+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -117,6 +122,14 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         setUpMapIfNeeded();
         mLocationProvider.connect();
 
+
+        Intent intentExtras=getIntent();
+        Bundle bundleExtras=intentExtras.getExtras();
+        if (!bundleExtras.isEmpty()){
+            String msg=bundleExtras.getString("msg");
+            Log.i("RG resume", String.valueOf(msg));
+
+        }
 
     }
 
@@ -263,6 +276,10 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         }
         mMap.setMyLocationEnabled(true);
 
+        if((!nettracker.isGPSEnabled)&&isOnline()){
+            nettracker.showSettingsAlert();
+        }
+        positioncheck();
 
             mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
                 @Override
@@ -275,6 +292,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                                     "Lat " + String.valueOf(mMap.getMyLocation().getLatitude()) + "\n" +
                                     "Lon " + String.valueOf(mMap.getMyLocation().getLongitude()),
                             Toast.LENGTH_SHORT).show();
+
 
                     LatLng latlon = new LatLng(mMap.getMyLocation().getLatitude(), mMap.getMyLocation().getLongitude());
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(latlon));

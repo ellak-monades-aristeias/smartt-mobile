@@ -77,7 +77,7 @@ public class NetworkTracker extends Service {
         }
 
         public void onStatusChanged(String provider, int status, Bundle extras) {
-
+            Log.d("NETTR", String.valueOf(status));
         }
 
         public void onProviderEnabled(String provider) {
