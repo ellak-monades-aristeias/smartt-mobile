@@ -126,9 +126,9 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         Intent intentExtras=getIntent();
         Bundle bundleExtras=intentExtras.getExtras();
         if (!bundleExtras.isEmpty()){
-            String msg=bundleExtras.getString("msg");
+            String msg=bundleExtras.getString("login");
             Log.i("RG resume", String.valueOf(msg));
-
+            Toast.makeText(MapsActivity.this, String.valueOf(msg), Toast.LENGTH_SHORT).show();
         }
 
     }

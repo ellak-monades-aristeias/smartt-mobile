@@ -305,11 +305,26 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
                     for (String line : response) {
                         System.out.println(line);
                         Log.i("RG-res", String.valueOf(line));
-                        Intent intentBundle=new Intent(LoginActivity.this, MapsActivity.class);
-                        Bundle bundle = new Bundle();
-                        bundle.putString("msg",line);
-                        intentBundle.putExtras(bundle);
-                        startActivity(intentBundle);
+
+                        try {
+                            JSONObject jObject = new JSONObject(line);
+                            //String status = jObject.getString("status");
+                            String message = jObject.getString("message");
+                            //Log.i("RG-status", String.valueOf(status));
+                            Log.i("RG-message", String.valueOf(message));
+
+                            Intent intentBundle=new Intent(LoginActivity.this, MapsActivity.class);
+                            Bundle bundle = new Bundle();
+                            bundle.putString("login",String.valueOf(message));
+
+                            intentBundle.putExtras(bundle);
+                            startActivity(intentBundle);
+                        }
+                        catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+
                     }
                 } catch (IOException ex) {
                     ex.printStackTrace();
