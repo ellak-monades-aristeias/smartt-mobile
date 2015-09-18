@@ -75,6 +75,13 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         setContentView(R.layout.activity_maps);
         //setUpMapIfNeeded();
 
+        if(ut.loadStoredValue("app_mac_address", "none").equals("none")) {
+            ut.savePreferences("app_mac_address", ut.getMacAddress());
+            Log.i("MAC",String.valueOf(ut.getMacAddress()));
+        }
+
+
+
         mDrawerList = (ListView)findViewById(R.id.navList);
         mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
         mActivityTitle = getTitle().toString();
@@ -123,12 +130,9 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         mLocationProvider.connect();
 
 
-        Intent intentExtras=getIntent();
-        Bundle bundleExtras=intentExtras.getExtras();
-        if (!bundleExtras.isEmpty()){
-            String msg=bundleExtras.getString("login");
-            Log.i("RG resume", String.valueOf(msg));
-            Toast.makeText(MapsActivity.this, String.valueOf(msg), Toast.LENGTH_SHORT).show();
+        if (!(ut.loadStoredValue("app_email_address", "none").equals("none"))) {
+            getSupportActionBar().setTitle(String.valueOf(ut.loadStoredValue("app_email_address", "none")));
+            Log.i("LOADED-app_email_add",String.valueOf(ut.loadStoredValue("app_email_address", "none")));
         }
 
     }
@@ -147,7 +151,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     }
 
     private void addDrawerItems() {
-        final String[] osArray = { "Login", "iOS", "Windows", "OS X", "Linux" };
+        final String[] osArray = { "Login", "iOS", "Windows", "OS X", "Logout" };
         mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, osArray);
         mDrawerList.setAdapter(mAdapter);
 
@@ -164,16 +168,32 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
                 if (id == 0){
 
-                    Intent intent=new Intent("gr.hua.dit.smartt.LOGIN");
-                    startActivity(intent);
+                    if(ut.getEmailAddress()!= "none") {
+                        Log.i("SV-email", String.valueOf(ut.getEmailAddress()));
+                        Toast.makeText(MapsActivity.this, "Logged in as " + String.valueOf(ut.getEmailAddress()), Toast.LENGTH_SHORT).show();
+                    }
+                    else {
+
+                        Intent intent = new Intent("gr.hua.dit.smartt.LOGIN");
+                        startActivity(intent);
+                    }
                 }
 
                 if (id == 1){
                     Toast.makeText(MapsActivity.this, "IOS!", Toast.LENGTH_SHORT).show();
                 }
+
+                if (id == 4){
+                    ut.clearPreferences();
+                    Toast.makeText(MapsActivity.this, "Cleared Cache", Toast.LENGTH_SHORT).show();
+                }
+
                 marker = new MarkerOptions().position(new LatLng(latitude, longitude));
                 // adding marker
                 positionmarker = mMap.addMarker(marker);
+
+
+
 
             }
         });
@@ -401,5 +421,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 .title("I am here!");
         mMap.addMarker(options);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+        Toast.makeText(MapsActivity.this, "Location changed", Toast.LENGTH_SHORT).show();
+
     }
 }

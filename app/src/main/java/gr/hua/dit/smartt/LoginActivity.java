@@ -69,6 +69,9 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
     private View mProgressView;
     private View mLoginFormView;
 
+    Utilities ut = new Utilities(this);
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -277,41 +280,43 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
         protected Boolean doInBackground(Void... params) {
 
 
-                String requestURL = "http://www.google.com";
-                try {
-                    HttpUtility.sendGetRequest(requestURL);
-                    String[] response = HttpUtility.readMultipleLinesRespone();
-                    for (String line : response) {
-                        System.out.println(line);
-                    }
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
-                HttpUtility.disconnect();
-
-
-                System.out.println("=====================================");
 
                 // test sending POST request
                 Map<String, String> params1 = new HashMap<String, String>();
-                requestURL = "http://83.212.116.159/smartt/backend/api/user/register";
+                String requestURL = "http://83.212.116.159/smartt/backend/api/user/login";
                 params1.put("email", mEmail);
                 params1.put("password", mPassword);
                 params1.put("device_id", "AAABBBCCCDDDEEE");
 
                 try {
                     HttpUtility.sendPostRequest(requestURL, params1);
+
                     String[] response = HttpUtility.readMultipleLinesRespone();
+
                     for (String line : response) {
                         System.out.println(line);
                         Log.i("RG-res", String.valueOf(line));
 
                         try {
                             JSONObject jObject = new JSONObject(line);
-                            //String status = jObject.getString("status");
+                            String success = jObject.getString("success");
                             String message = jObject.getString("message");
-                            //Log.i("RG-status", String.valueOf(status));
-                            Log.i("RG-message", String.valueOf(message));
+                            String user_id = jObject.getString("user_id");
+                            String email = jObject.getString("email");
+
+                            Log.i("RG-login success", String.valueOf(success));
+                            Log.i("RG-login message", String.valueOf(message));
+                            Log.i("RG-login user_id", String.valueOf(user_id));
+
+                            if(ut.loadStoredValue("registered_email", "none").equals("none")) {
+                                ut.savePreferences("registered_email",email);
+                                Log.i("SV-email",String.valueOf(email));
+                            }
+
+                            if(ut.loadStoredValue("app_email_address", "none").equals("none")) {
+                                ut.savePreferences("app_email_address",email);
+                                Log.i("SV-app_email_address",String.valueOf(email));
+                            }
 
                             Intent intentBundle=new Intent(LoginActivity.this, MapsActivity.class);
                             Bundle bundle = new Bundle();
@@ -328,6 +333,9 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
                     }
                 } catch (IOException ex) {
                     ex.printStackTrace();
+                    Intent intent = new Intent("gr.hua.dit.smartt.LOGIN");
+                    startActivity(intent);
+
                 }
                 HttpUtility.disconnect();
 
