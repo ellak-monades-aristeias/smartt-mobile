@@ -1,6 +1,7 @@
 package gr.hua.dit.smartt;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -129,7 +130,19 @@ public class HttpUtility {
     public static String[] readMultipleLinesRespone() throws IOException {
         InputStream inputStream = null;
         if (httpConn != null) {
-            inputStream = httpConn.getInputStream();
+
+            if (httpConn.getResponseCode() == 200) {
+                inputStream = httpConn.getInputStream();
+            }
+           else if ((httpConn.getResponseCode() == 403) || (httpConn.getResponseCode() == 404) ||(httpConn.getResponseCode() == 409))
+            {
+                inputStream = httpConn.getErrorStream();
+            }
+            else{
+                InputStream is = new ByteArrayInputStream( httpConn.getResponseMessage().getBytes());
+                inputStream = is;
+            }
+
         } else {
             throw new IOException("Connection is not established.");
         }
