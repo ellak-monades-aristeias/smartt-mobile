@@ -1,6 +1,7 @@
 package gr.hua.dit.smartt;
 
 import android.app.LoaderManager;
+import android.app.ProgressDialog;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
@@ -40,27 +41,28 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_routes);
 
-        Log.i("list",String.valueOf(routes.size()));
+
+        Log.i("list", String.valueOf(routes.size()));
        ListView lv = (ListView) findViewById(R.id.listView);
+
+
+        Log.i("list after", String.valueOf(routes.size()));
 
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(
                 this,
                 android.R.layout.simple_list_item_1,
                 routes );
 
+
         lv.setAdapter(arrayAdapter);
-        getroutes();
-        Log.i("list after", String.valueOf(routes.size()));
+        mRoutesFetchTask = new RoutesFetch(arrayAdapter);
+        mRoutesFetchTask.execute();
 
 
     }
 
 
-    public void getroutes(){
-        mRoutesFetchTask = new RoutesFetch();
-        mRoutesFetchTask.execute((Void) null);
 
-    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -130,15 +132,15 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
         return super.onOptionsItemSelected(item);
     }
 
-    public class RoutesFetch extends AsyncTask<Void, Void, Boolean> {
+    public class RoutesFetch extends AsyncTask<Void, Void, List<String>> {
+        private final ArrayAdapter<String> mAdapter;
 
-
-        RoutesFetch() {
-
+        RoutesFetch(ArrayAdapter<String> arrayAdapter) {
+        mAdapter=arrayAdapter;
         }
 
         @Override
-        protected Boolean doInBackground(Void... params) {
+        protected List<String> doInBackground(Void... params) {
 
 
 
@@ -163,7 +165,7 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
                             JSONObject actor = jsonroutes.getJSONObject(i);
                             String name = actor.getString("line_name_en");
                             routes.add(name);
-                            Log.i("RG-res-name", String.valueOf(name));
+                            //Log.i("RG-res-name", String.valueOf(name));
                         }
 
 
@@ -181,14 +183,23 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
             }
             HttpUtility.disconnect();
 
-
-            return true;
+            return routes;
         }
 
         @Override
-        protected void onPostExecute(final Boolean success) {
+        protected void onPostExecute(final List<String> result) {
+
+            super.onPostExecute(result);
+            mAdapter.addAll(routes);
+
+            Log.i("list after", String.valueOf(routes.size()));
+        }
+
+        @Override
+        protected void onPreExecute() {
 
         }
+
 
         @Override
         protected void onCancelled() {
