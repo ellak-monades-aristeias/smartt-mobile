@@ -151,7 +151,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     }
 
     private void addDrawerItems() {
-        final String[] osArray = { "Login", "iOS", "Windows", "OS X", "Logout" };
+        final String[] osArray = { "Login", "Routes", "Windows", "OS X", "Logout" };
         mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, osArray);
         mDrawerList.setAdapter(mAdapter);
 
@@ -180,7 +180,9 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 }
 
                 if (id == 1){
-                    Toast.makeText(MapsActivity.this, "IOS!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MapsActivity.this, "Routes!", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent("gr.hua.dit.smartt.ROUTES");
+                    startActivity(intent);
                 }
 
                 if (id == 4){
