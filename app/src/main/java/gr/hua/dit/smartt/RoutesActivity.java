@@ -14,8 +14,12 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
+import android.widget.AdapterView.OnItemClickListener;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -58,6 +62,22 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
         mRoutesFetchTask = new RoutesFetch(arrayAdapter);
         mRoutesFetchTask.execute();
 
+        lv.setOnItemClickListener(new OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapter, View v, int position,
+                                    long arg3) {
+                String value = (String) adapter.getItemAtPosition(position);
+                Log.i("LIST",value);
+                Toast.makeText(RoutesActivity.this, value, Toast.LENGTH_SHORT).show();
+                //Intent intent = new Intent("gr.hua.dit.smartt.MAIN");
+                //startActivity(intent);
+
+                Intent openStartingPoint = new Intent(RoutesActivity.this, MapsActivity.class);
+                startActivity(openStartingPoint);
+                // assuming string and if you want to get the value on click of list item
+                // do what you intend to do on click of listview row
+            }
+        });
 
     }
 

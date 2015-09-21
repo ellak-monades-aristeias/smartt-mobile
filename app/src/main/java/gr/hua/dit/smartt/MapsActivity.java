@@ -104,13 +104,13 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
             initilizeMap();
             Log.i("RG", "After Loading the map");
 
-            Toast.makeText(getApplicationContext(),
+          /*  Toast.makeText(getApplicationContext(),
                     String.valueOf(mMap.getMyLocation().getLatitude()
                     ),
                     Toast.LENGTH_SHORT)
                     .show();
 
-
+*/
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -165,7 +165,13 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 Log.i("RG", String.valueOf(id) + ' ' + String.valueOf(position) + ' ' + String.valueOf(osArray[position]));
                 mMap.clear();
 
+                if(mDrawerLayout.isDrawerOpen(mDrawerList)) {
+                    mDrawerLayout.closeDrawer(mDrawerList);
 
+                }
+                else {
+                    mDrawerLayout.openDrawer(mDrawerList);
+                }
                 if (id == 0){
 
                     if(ut.getEmailAddress()!= "none") {
@@ -282,7 +288,9 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
     private void initilizeMap() {
         if (mMap == null) {
-            mMap = ((MapFragment) getFragmentManager().findFragmentById(R.id.map)).getMap();
+           // mMap = ((MapFragment) getFragmentManager().findFragmentById(R.id.map)).getMap();
+            mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(
+                    R.id.map)).getMap();
 
 
             // check if map is created successfully or not
