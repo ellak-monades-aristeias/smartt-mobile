@@ -15,6 +15,8 @@
 
     <string name="url_login">http://83.212.116.159/smartt/backend/api/user/login</string>
     <string name="url_routes">http://83.212.116.159/smartt/backend/api/routes/routes</string>
+    <string name="url_nearstops">http://83.212.116.159/smartt/backend/api/routes/nearstops</string>
+
 
 
 </resources>

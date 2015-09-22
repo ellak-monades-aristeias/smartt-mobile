@@ -6,6 +6,7 @@ import android.content.res.Configuration;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 //import android.support.v4.widget.DrawerLayout;
@@ -45,6 +46,16 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 
 public class MapsActivity extends AppCompatActivity implements LocationProvider.LocationCallback {
     private ListView mDrawerList;
@@ -53,6 +64,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     private ActionBarDrawerToggle mDrawerToggle;
     private String mActivityTitle;
 
+    ArrayList<LatLng> nearstopslatlng = new ArrayList<LatLng>();
 
 
     public static final String TAG = MapsActivity.class.getSimpleName();
@@ -111,6 +123,9 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                     .show();
 
 */
+            LoadnearstopsTask nearstops = new LoadnearstopsTask(nearstopslatlng);
+            nearstops.execute();
+            Log.i("Listsize",String.valueOf(nearstopslatlng.size()));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -165,33 +180,31 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 Log.i("RG", String.valueOf(id) + ' ' + String.valueOf(position) + ' ' + String.valueOf(osArray[position]));
                 mMap.clear();
 
-                if(mDrawerLayout.isDrawerOpen(mDrawerList)) {
+                if (mDrawerLayout.isDrawerOpen(mDrawerList)) {
                     mDrawerLayout.closeDrawer(mDrawerList);
 
-                }
-                else {
+                } else {
                     mDrawerLayout.openDrawer(mDrawerList);
                 }
-                if (id == 0){
+                if (id == 0) {
 
-                    if(ut.getEmailAddress()!= "none") {
+                    if (ut.getEmailAddress() != "none") {
                         Log.i("SV-email", String.valueOf(ut.getEmailAddress()));
                         Toast.makeText(MapsActivity.this, "Logged in as " + String.valueOf(ut.getEmailAddress()), Toast.LENGTH_SHORT).show();
-                    }
-                    else {
+                    } else {
 
                         Intent intent = new Intent("gr.hua.dit.smartt.LOGIN");
                         startActivity(intent);
                     }
                 }
 
-                if (id == 1){
+                if (id == 1) {
                     Toast.makeText(MapsActivity.this, "Routes!", Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent("gr.hua.dit.smartt.ROUTES");
                     startActivity(intent);
                 }
 
-                if (id == 4){
+                if (id == 4) {
                     ut.clearPreferences();
                     Toast.makeText(MapsActivity.this, "Cleared Cache", Toast.LENGTH_SHORT).show();
                 }
@@ -199,8 +212,6 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 marker = new MarkerOptions().position(new LatLng(latitude, longitude));
                 // adding marker
                 positionmarker = mMap.addMarker(marker);
-
-
 
 
             }
@@ -268,6 +279,9 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
         return super.onOptionsItemSelected(item);
     }
+
+
+
     /**
      * Sets up the map if it is possible to do so (i.e., the Google Play services APK is correctly
      * installed) and the map has not already been instantiated.. This will ensure that we only ever
@@ -433,5 +447,69 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
         Toast.makeText(MapsActivity.this, "Location changed", Toast.LENGTH_SHORT).show();
 
+    }
+
+
+    public class LoadnearstopsTask extends AsyncTask<Void, Void, List<LatLng>> {
+
+        List<LatLng> mLatLng = new ArrayList<LatLng>();
+
+        LoadnearstopsTask(ArrayList<LatLng> mLatLng){
+
+        }
+
+        @Override
+        protected List<LatLng> doInBackground(Void... params) {
+            Map<String, String> params1 = new HashMap<String, String>();
+            //String requestURL = getString(R.string.url_nearstops);
+            String requestURL = "http://83.212.116.159/smartt/backend/api/routes/nearstops?lat=38.0088432&lon=23.6591570";
+
+
+            try {
+                HttpUtility.sendGetRequest(requestURL);
+
+                String[] response = HttpUtility.readMultipleLinesRespone();
+
+                for (String line : response) {
+                    System.out.println(line);
+                    Log.i("RG-res", String.valueOf(line));
+
+                    try {
+                        JSONObject jObject = new JSONObject(line);
+                        String success = jObject.getString("stops");
+                        Log.i("RG-login success", String.valueOf(success));
+
+
+                        JSONArray jsonroutes = new JSONArray(success);
+                        for (int i=0; i<jsonroutes.length(); i++) {
+                            JSONObject actor = jsonroutes.getJSONObject(i);
+                            String name = actor.getString("s_id");
+                            String lat = actor.getString("lat");
+                            String lon = actor.getString("lon");
+
+                             mLatLng.add(new LatLng(Double.parseDouble(lat), Double.parseDouble(lon)));
+
+
+                            Log.i("RG-res-name", String.valueOf(lat) +","+ String.valueOf(lon));
+                        }
+
+                    }
+                    catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                Intent intent = new Intent("gr.hua.dit.smartt.LOGIN");
+                startActivity(intent);
+
+            }
+            HttpUtility.disconnect();
+
+
+            return mLatLng;
+        }
     }
 }
