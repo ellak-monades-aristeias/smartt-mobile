@@ -285,7 +285,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
                 // test sending POST request
                 Map<String, String> params1 = new HashMap<String, String>();
-                String requestURL = "http://83.212.116.159/smartt/backend/api/user/login";
+                String requestURL = getString(R.string.url_login);
                 params1.put("email", mEmail);
                 params1.put("password", mPassword);
                 params1.put("device_id", mac);
