@@ -76,6 +76,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
     CameraUpdate cameraUpdate;
     MarkerOptions marker = new MarkerOptions();
+    ArrayList<MarkerOptions> markersList = new ArrayList<MarkerOptions>();
     Marker positionmarker;
     Utilities ut = new Utilities(this);
 
@@ -123,8 +124,10 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                     .show();
 
 */
-            LoadnearstopsTask nearstops = new LoadnearstopsTask(nearstopslatlng);
-            nearstops.execute();
+            //LoadnearstopsTask nearstops = new LoadnearstopsTask(nearstopslatlng);
+            //nearstops.execute();
+
+
             Log.i("Listsize",String.valueOf(nearstopslatlng.size()));
 
         } catch (Exception e) {
@@ -175,8 +178,8 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 //Toast.makeText(MapsActivity.this, "Time for an upgrade!", Toast.LENGTH_SHORT).show();
 
-                final double latitude = 37.98392;
-                final double longitude = 23.72936;
+                //final double latitude = 37.98392;
+                //final double longitude = 23.72936;
                 Log.i("RG", String.valueOf(id) + ' ' + String.valueOf(position) + ' ' + String.valueOf(osArray[position]));
                 mMap.clear();
 
@@ -209,7 +212,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                     Toast.makeText(MapsActivity.this, "Cleared Cache", Toast.LENGTH_SHORT).show();
                 }
 
-                marker = new MarkerOptions().position(new LatLng(latitude, longitude));
+                //marker = new MarkerOptions().position(new LatLng(latitude, longitude));
                 // adding marker
                 positionmarker = mMap.addMarker(marker);
 
@@ -374,7 +377,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
             marker = new MarkerOptions().position(new LatLng(latitude, longitude));
             // adding marker
-            positionmarker = mMap.addMarker(marker);
+            //positionmarker = mMap.addMarker(marker);
 
 
 
@@ -396,6 +399,10 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                     Toast.makeText(getApplicationContext(), "message!", Toast.LENGTH_LONG).show();
                 }
             }
+
+            Location loc = new Location(String.valueOf(new LatLng(latitude, longitude)));
+
+            handleNewLocation(loc);
         }
     }
 
@@ -433,6 +440,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     }
 
     public void handleNewLocation(Location location) {
+        mMap.clear();
         Log.d(TAG, location.toString());
 
         double currentLatitude = location.getLatitude();
@@ -445,25 +453,28 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 .title("I am here!");
         mMap.addMarker(options);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+        LoadnearstopsTask loadnearstopsTask = new LoadnearstopsTask();
+        loadnearstopsTask.execute(latLng);
+
         Toast.makeText(MapsActivity.this, "Location changed", Toast.LENGTH_SHORT).show();
 
     }
 
 
-    public class LoadnearstopsTask extends AsyncTask<Void, Void, List<LatLng>> {
+    public class LoadnearstopsTask extends AsyncTask<LatLng, Void, List<LatLng>> {
 
         List<LatLng> mLatLng = new ArrayList<LatLng>();
 
-        LoadnearstopsTask(ArrayList<LatLng> mLatLng){
-
-        }
-
         @Override
-        protected List<LatLng> doInBackground(Void... params) {
+        protected List<LatLng> doInBackground(LatLng... Params) {
+
+            LatLng latlngTemp = Params[0];
+            String latTemp = String.valueOf(latlngTemp.latitude);
+            String lngTemp = String.valueOf(latlngTemp.longitude);
             Map<String, String> params1 = new HashMap<String, String>();
             //String requestURL = getString(R.string.url_nearstops);
-            String requestURL = "http://83.212.116.159/smartt/backend/api/routes/nearstops?lat=38.0088432&lon=23.6591570";
-
+            //String requestURL = "http://83.212.116.159/smartt/backend/api/routes/nearstops?lat=38.0088432&lon=23.6591570";
+            String requestURL = "http://83.212.116.159/smartt/backend/api/routes/nearstops?lat=" + latTemp + "&lon=" + lngTemp;
 
             try {
                 HttpUtility.sendGetRequest(requestURL);
@@ -488,8 +499,6 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                             String lon = actor.getString("lon");
 
                              mLatLng.add(new LatLng(Double.parseDouble(lat), Double.parseDouble(lon)));
-
-
                             Log.i("RG-res-name", String.valueOf(lat) +","+ String.valueOf(lon));
                         }
 
@@ -508,8 +517,21 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
             }
             HttpUtility.disconnect();
 
-
+            Log.i("mlist", mLatLng.size()+"");
             return mLatLng;
         }
+
+        @Override
+        protected void onPostExecute(List<LatLng> myLatLng) {
+            markersList.clear();
+            for(int i=0; i< mLatLng.size(); i++) {
+                //marker = new MarkerOptions().position(new LatLng(latitude, longitude));
+                markersList.add(new MarkerOptions().position(new LatLng(mLatLng.get(i).latitude, mLatLng.get(i).longitude)));
+                mMap.addMarker(new MarkerOptions().position(new LatLng(mLatLng.get(i).latitude, mLatLng.get(i).longitude)));
+            }
+
+        }
+
+
     }
 }
