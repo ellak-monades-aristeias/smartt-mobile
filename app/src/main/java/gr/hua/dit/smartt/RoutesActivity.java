@@ -166,7 +166,7 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
 
             // test sending POST request
             Map<String, String> params1 = new HashMap<String, String>();
-            String requestURL = "http://83.212.116.159/smartt/backend/api/routes/routes";
+            String requestURL = getString(R.string.url_routes);
 
 
             try {
