@@ -1,8 +1,11 @@
 package gr.hua.dit.smartt;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -16,9 +19,12 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -27,6 +33,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMapOptions;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Marker;
@@ -52,6 +59,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -135,7 +143,45 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         }
 
 
+        // Setting a custom info window adapter for the google map
+        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
 
+            // Use default InfoWindow frame
+            @Override
+            public View getInfoWindow(Marker arg0) {
+                return null;
+            }
+
+            // Defines the contents of the InfoWindow
+            @Override
+            public View getInfoContents(Marker arg0) {
+
+                // Getting view from the layout file info_window_layout
+                View v = getLayoutInflater().inflate(R.layout.markerinfowindowlayout, null);
+
+                // Getting the position from the marker
+                String stopName = arg0.getTitle();
+
+                // Getting reference to the TextView to set latitude
+                TextView tvName = (TextView) v.findViewById(R.id.StopName);
+                tvName.setText(stopName);
+
+                ListView list = (ListView) v.findViewById(R.id.ListItems);
+
+                String[] planets = new String[] { "Route1", "Route2", "Route3", "Route4"};
+                ArrayList<String> planetList = new ArrayList<String>();
+                planetList.addAll( Arrays.asList(planets) );
+
+
+                ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(getApplicationContext(), R.layout.simplerow, planetList);
+                list.setAdapter( listAdapter );
+
+                // Returning the view containing InfoWindow contents
+                return v;
+
+            }
+        });
+        //end of onCreate
     }
 
     @Override
@@ -333,17 +379,18 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 public boolean onMyLocationButtonClick() {
                     Log.i("LOCATION", "in button click");
                     if (mMap.getMyLocation() != null) {
-                    Toast.makeText(
-                            getApplicationContext(),
-                            "Accuracy " + String.valueOf(mMap.getMyLocation().getAccuracy()) + "\n" +
-                                    "Lat " + String.valueOf(mMap.getMyLocation().getLatitude()) + "\n" +
-                                    "Lon " + String.valueOf(mMap.getMyLocation().getLongitude()),
-                            Toast.LENGTH_SHORT).show();
+                        Toast.makeText(
+                                getApplicationContext(),
+                                "Accuracy " + String.valueOf(mMap.getMyLocation().getAccuracy()) + "\n" +
+                                        "Lat " + String.valueOf(mMap.getMyLocation().getLatitude()) + "\n" +
+                                        "Lon " + String.valueOf(mMap.getMyLocation().getLongitude()),
+                                Toast.LENGTH_SHORT).show();
 
 
-                    LatLng latlon = new LatLng(mMap.getMyLocation().getLatitude(), mMap.getMyLocation().getLongitude());
-                    mMap.moveCamera(CameraUpdateFactory.newLatLng(latlon));
-                    mMap.animateCamera(CameraUpdateFactory.zoomTo(13));}
+                        LatLng latlon = new LatLng(mMap.getMyLocation().getLatitude(), mMap.getMyLocation().getLongitude());
+                        mMap.moveCamera(CameraUpdateFactory.newLatLng(latlon));
+                        mMap.animateCamera(CameraUpdateFactory.zoomTo(13));
+                    }
                     return true;
                 }
             });
@@ -461,12 +508,12 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     }
 
 
-    public class LoadnearstopsTask extends AsyncTask<LatLng, Void, List<LatLng>> {
+    public class LoadnearstopsTask extends AsyncTask<LatLng, Void, List<GetStopsNearMe>> {
 
-        List<LatLng> mLatLng = new ArrayList<LatLng>();
+        List<GetStopsNearMe> mLatLng = new ArrayList<GetStopsNearMe>();
 
         @Override
-        protected List<LatLng> doInBackground(LatLng... Params) {
+        protected List<GetStopsNearMe> doInBackground(LatLng... Params) {
 
             LatLng latlngTemp = Params[0];
             String latTemp = String.valueOf(latlngTemp.latitude);
@@ -494,11 +541,11 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                         JSONArray jsonroutes = new JSONArray(success);
                         for (int i=0; i<jsonroutes.length(); i++) {
                             JSONObject actor = jsonroutes.getJSONObject(i);
-                            String name = actor.getString("s_id");
+                            String name = actor.getString("name_el");
                             String lat = actor.getString("lat");
                             String lon = actor.getString("lon");
 
-                             mLatLng.add(new LatLng(Double.parseDouble(lat), Double.parseDouble(lon)));
+                            mLatLng.add(new GetStopsNearMe(name, Double.parseDouble(lat), Double.parseDouble(lon)));
                             Log.i("RG-res-name", String.valueOf(lat) +","+ String.valueOf(lon));
                         }
 
@@ -522,16 +569,59 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         }
 
         @Override
-        protected void onPostExecute(List<LatLng> myLatLng) {
+        protected void onPostExecute(List<GetStopsNearMe> myLatLng) {
+
             markersList.clear();
             for(int i=0; i< mLatLng.size(); i++) {
                 //marker = new MarkerOptions().position(new LatLng(latitude, longitude));
-                markersList.add(new MarkerOptions().position(new LatLng(mLatLng.get(i).latitude, mLatLng.get(i).longitude)));
-                mMap.addMarker(new MarkerOptions().position(new LatLng(mLatLng.get(i).latitude, mLatLng.get(i).longitude)));
+                markersList.add(new MarkerOptions().position(new LatLng(mLatLng.get(i).getStopLat(), mLatLng.get(i).getStopLng())));
+                mMap.addMarker(new MarkerOptions().position(new LatLng(mLatLng.get(i).getStopLat(), mLatLng.get(i).getStopLng()))
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
+                        .title(mLatLng.get(i).getStopName()));
             }
 
         }
 
 
     }
+
+
+    public class GetStopsNearMe {
+        String stopName;
+        double stopLat;
+        double stopLng;
+
+        public GetStopsNearMe(String stopName, double stopLat, double stopLng) {
+            this.stopName = stopName;
+            this.stopLat = stopLat;
+            this.stopLng = stopLng;
+        }
+
+        public String getStopName() {
+            return stopName;
+        }
+
+        public double getStopLat() {
+            return stopLat;
+        }
+
+        public double getStopLng() {
+            return stopLng;
+        }
+
+        public void setStopName(String stopName) {
+            this.stopName = stopName;
+        }
+
+        public void setStopLat(double stopLat) {
+            this.stopLat = stopLat;
+        }
+
+        public void setStopLng(double stopLng) {
+            this.stopLng = stopLng;
+        }
+    }
+
 }
+
+
