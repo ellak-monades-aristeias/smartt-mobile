@@ -71,6 +71,8 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     private ArrayAdapter<String> mAdapter;
     private ActionBarDrawerToggle mDrawerToggle;
     private String mActivityTitle;
+    public ArrayList<String> stopLines = new ArrayList<String>();
+    public View v;
 
     ArrayList<LatLng> nearstopslatlng = new ArrayList<LatLng>();
 
@@ -157,7 +159,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
             public View getInfoContents(Marker arg0) {
 
                 // Getting view from the layout file info_window_layout
-                View v = getLayoutInflater().inflate(R.layout.markerinfowindowlayout, null);
+                v = getLayoutInflater().inflate(R.layout.markerinfowindowlayout, null);
 
                 // Getting the position from the marker
                 String stopName = arg0.getTitle();
@@ -166,15 +168,12 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 TextView tvName = (TextView) v.findViewById(R.id.StopName);
                 tvName.setText(stopName);
 
-                ListView list = (ListView) v.findViewById(R.id.ListItems);
+                //String[] planets = new String[] { "Route1", "Route2", "Route3", "Route4"};
+                //ArrayList<String> planetList = new ArrayList<String>();
 
-                String[] planets = new String[] { "Route1", "Route2", "Route3", "Route4"};
-                ArrayList<String> planetList = new ArrayList<String>();
-                planetList.addAll( Arrays.asList(planets) );
+                LoadLinesfromStop loadlinesfromstop = new LoadLinesfromStop();
+                loadlinesfromstop.execute("061008");
 
-
-                ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(getApplicationContext(), R.layout.simplerow, planetList);
-                list.setAdapter( listAdapter );
 
                 // Returning the view containing InfoWindow contents
                 return v;
@@ -542,10 +541,11 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                         for (int i=0; i<jsonroutes.length(); i++) {
                             JSONObject actor = jsonroutes.getJSONObject(i);
                             String name = actor.getString("name_el");
+                            String id = actor.getString("s_id");
                             String lat = actor.getString("lat");
                             String lon = actor.getString("lon");
 
-                            mLatLng.add(new GetStopsNearMe(name, Double.parseDouble(lat), Double.parseDouble(lon)));
+                            mLatLng.add(new GetStopsNearMe(name,Integer.parseInt(id), Double.parseDouble(lat), Double.parseDouble(lon)));
                             Log.i("RG-res-name", String.valueOf(lat) +","+ String.valueOf(lon));
                         }
 
@@ -586,15 +586,95 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     }
 
 
+
+    public class LoadLinesfromStop extends AsyncTask<String, Void, List<String>> {
+
+
+
+        @Override
+        protected List<String> doInBackground(String... Params) {
+            stopLines.clear();
+            String stopId = Params[0];
+
+            String requestURL = "http://83.212.116.159/smartt/backend/api/routes/linesfromstop?stop=" + stopId;
+
+            try {
+                HttpUtility.sendGetRequest(requestURL);
+
+                String[] response = HttpUtility.readMultipleLinesRespone();
+
+                for (String line : response) {
+                    System.out.println(line);
+                    Log.i("RG-res", String.valueOf(line));
+
+                    try {
+                        JSONObject jObject = new JSONObject(line);
+                        String success = jObject.getString("lines");
+                        Log.i("RG-login success", String.valueOf(success));
+
+
+                        JSONArray jsonroutes = new JSONArray(success);
+                        for (int i=0; i<jsonroutes.length(); i++) {
+                            JSONObject actor = jsonroutes.getJSONObject(i);
+                            String lineId = actor.getString("line_id");
+                            String lineName = actor.getString("line_name_el");
+
+                            stopLines.add(lineId + " " + lineName);
+                            Log.i("emfanisi grammwn2", stopId + " " + lineName);
+                        }
+
+                    }
+                    catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                Intent intent = new Intent("gr.hua.dit.smartt.LOGIN");
+                startActivity(intent);
+
+            }
+            HttpUtility.disconnect();
+
+            Log.i("stopLines", stopLines.size()+"");
+            return stopLines;
+        }
+
+        @Override
+        protected void onPostExecute(List<String> myLatLng) {
+            Log.i("emfanisi grammwn", stopLines.toString());
+            //planetList.addAll(stopLines);
+
+            ListView list = (ListView) v.findViewById(R.id.ListItems);
+            ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(getApplicationContext(), R.layout.simplerow, stopLines);
+            list.setAdapter( listAdapter );
+        }
+
+    }
+
+
+
     public class GetStopsNearMe {
         String stopName;
+        int id;
         double stopLat;
         double stopLng;
 
-        public GetStopsNearMe(String stopName, double stopLat, double stopLng) {
+        public GetStopsNearMe(String stopName, int id, double stopLat, double stopLng) {
             this.stopName = stopName;
+            this.id = id;
             this.stopLat = stopLat;
             this.stopLng = stopLng;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(int id) {
+            this.id = id;
         }
 
         public String getStopName() {
