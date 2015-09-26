@@ -18,6 +18,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
@@ -63,6 +64,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 
 public class MapsActivity extends AppCompatActivity implements LocationProvider.LocationCallback {
@@ -160,26 +162,58 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
                 // Getting view from the layout file info_window_layout
                 v = getLayoutInflater().inflate(R.layout.markerinfowindowlayout, null);
-
-                // Getting the position from the marker
-                String stopName = arg0.getTitle();
-
-                // Getting reference to the TextView to set latitude
-                TextView tvName = (TextView) v.findViewById(R.id.StopName);
-                tvName.setText(stopName);
-
-                //String[] planets = new String[] { "Route1", "Route2", "Route3", "Route4"};
-                //ArrayList<String> planetList = new ArrayList<String>();
-
+                v.isClickable();
                 LoadLinesfromStop loadlinesfromstop = new LoadLinesfromStop();
-                loadlinesfromstop.execute("061008");
+                try {
 
+                    Log.i("emfanisi grammwn3", "teleiwnei to views " + arg0.getSnippet());
+                    loadlinesfromstop.execute(arg0.getSnippet()).get();
 
-                // Returning the view containing InfoWindow contents
+                    String stopName = arg0.getTitle();
+
+                    // Getting reference to the TextView to set latitude
+                    TextView tvName = (TextView) v.findViewById(R.id.StopName);
+                    tvName.setText(stopName);
+                    //String[] planets = new String[] { "Route1", "Route2", "Route3", "Route4"};
+                    //ArrayList<String> planetList = new ArrayList<String>();
+                    ListView list = (ListView) v.findViewById(R.id.ListItems);
+                    ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(getApplicationContext(), R.layout.simplerow, stopLines);
+                    list.setAdapter(listAdapter);
+
+                    list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> adapter, View v, int position,
+                                                long arg3) {
+                            String value = (String) adapter.getItemAtPosition(position);
+                            Log.i("LIST", value);
+                            Toast.makeText(MapsActivity.this, value, Toast.LENGTH_SHORT).show();
+                            //Intent intent = new Intent("gr.hua.dit.smartt.MAIN");
+                            //startActivity(intent);
+
+//                            Intent openStartingPoint = new Intent(RoutesActivity.this, MapsActivity.class);
+//                            startActivity(openStartingPoint);
+                            // assuming string and if you want to get the value on click of list item
+                            // do what you intend to do on click of listview row
+                        }
+                    });
+
+                    // Returning the view containing InfoWindow contents
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+                // Getting the position from the marker
                 return v;
-
             }
         });
+
+
+
+
+
+
         //end of onCreate
     }
 
@@ -545,7 +579,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                             String lat = actor.getString("lat");
                             String lon = actor.getString("lon");
 
-                            mLatLng.add(new GetStopsNearMe(name,Integer.parseInt(id), Double.parseDouble(lat), Double.parseDouble(lon)));
+                            mLatLng.add(new GetStopsNearMe(name, id, Double.parseDouble(lat), Double.parseDouble(lon)));
                             Log.i("RG-res-name", String.valueOf(lat) +","+ String.valueOf(lon));
                         }
 
@@ -575,9 +609,11 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
             for(int i=0; i< mLatLng.size(); i++) {
                 //marker = new MarkerOptions().position(new LatLng(latitude, longitude));
                 markersList.add(new MarkerOptions().position(new LatLng(mLatLng.get(i).getStopLat(), mLatLng.get(i).getStopLng())));
+                Log.i("emfanisi grammwn34", "teleiwnei to views " + String.valueOf(mLatLng.get(i).getId()));
                 mMap.addMarker(new MarkerOptions().position(new LatLng(mLatLng.get(i).getStopLat(), mLatLng.get(i).getStopLng()))
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
-                        .title(mLatLng.get(i).getStopName()));
+                        .icon(BitmapDescriptorFactory.fromResource(R.mipmap.busstop))
+                        .title(mLatLng.get(i).getStopName())
+                        .snippet(mLatLng.get(i).getId()+""));
             }
 
         }
@@ -647,9 +683,8 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
             Log.i("emfanisi grammwn", stopLines.toString());
             //planetList.addAll(stopLines);
 
-            ListView list = (ListView) v.findViewById(R.id.ListItems);
-            ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(getApplicationContext(), R.layout.simplerow, stopLines);
-            list.setAdapter( listAdapter );
+
+
         }
 
     }
@@ -658,22 +693,22 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
     public class GetStopsNearMe {
         String stopName;
-        int id;
+        String id;
         double stopLat;
         double stopLng;
 
-        public GetStopsNearMe(String stopName, int id, double stopLat, double stopLng) {
+        public GetStopsNearMe(String stopName, String id, double stopLat, double stopLng) {
             this.stopName = stopName;
             this.id = id;
             this.stopLat = stopLat;
             this.stopLng = stopLng;
         }
 
-        public int getId() {
+        public String getId() {
             return id;
         }
 
-        public void setId(int id) {
+        public void setId(String id) {
             this.id = id;
         }
 
