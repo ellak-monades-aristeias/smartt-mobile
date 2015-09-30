@@ -1,5 +1,6 @@
 package gr.hua.dit.smartt;
 
+import android.app.Dialog;
 import android.app.LoaderManager;
 import android.app.ProgressDialog;
 import android.content.CursorLoader;
@@ -12,14 +13,22 @@ import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.PopupWindow;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
+
+import com.google.android.gms.maps.model.LatLng;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -35,6 +44,7 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
 
     private RoutesFetch mRoutesFetchTask = null;
     private List<String> routes = new ArrayList<String>();
+    private ArrayList<LatLng> waypointList = new ArrayList<LatLng>();
     private ListView lv;
 
 
@@ -47,7 +57,7 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
 
 
         Log.i("list", String.valueOf(routes.size()));
-       ListView lv = (ListView) findViewById(R.id.listView);
+        ListView lv = (ListView) findViewById(R.id.listView);
 
 
         Log.i("list after", String.valueOf(routes.size()));
@@ -67,15 +77,38 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
             public void onItemClick(AdapterView<?> adapter, View v, int position,
                                     long arg3) {
                 String value = (String) adapter.getItemAtPosition(position);
-                Log.i("LIST",value);
-                Toast.makeText(RoutesActivity.this, value, Toast.LENGTH_SHORT).show();
-                //Intent intent = new Intent("gr.hua.dit.smartt.MAIN");
-                //startActivity(intent);
+                Log.i("LIST", value);
 
-                Intent openStartingPoint = new Intent(RoutesActivity.this, MapsActivity.class);
-                startActivity(openStartingPoint);
-                // assuming string and if you want to get the value on click of list item
-                // do what you intend to do on click of listview row
+                String[] parts = value.split(" ",2);
+                final String getIdFromValue = parts[0].trim();
+                //Log.i("nikos", parts[1]);
+                String[] partsName = parts[1].split("-");
+                String firstName = partsName[0].trim();
+                String lastName = partsName[partsName.length-1].trim();
+                //Log.i("nikos2", firstName + " - " + lastName);
+                //Toast.makeText(RoutesActivity.this, firstName + " - " + lastName, Toast.LENGTH_SHORT).show();
+
+
+                final Dialog dialog = new Dialog(RoutesActivity.this);
+                dialog.setContentView(R.layout.routepopup);
+                dialog.setTitle("ΚΑΤΕΥΘΥΝΣΗ");
+                Button btn = (Button)dialog.findViewById(R.id.route1);
+                Button btn2 = (Button)dialog.findViewById(R.id.route2);
+                btn.setText("Προς: " + firstName);
+                btn2.setText("Προς: " + lastName);
+                dialog.show();
+                btn.setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) {
+                        new GetWaypoints().execute(getIdFromValue,"0");
+                    }
+                });
+
+                btn2.setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v)
+                    {
+                        new GetWaypoints().execute(getIdFromValue,"1");
+                    }
+                });
             }
         });
 
@@ -162,12 +195,9 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
         @Override
         protected List<String> doInBackground(Void... params) {
 
-
-
             // test sending POST request
             Map<String, String> params1 = new HashMap<String, String>();
             String requestURL = getString(R.string.url_routes);
-
 
             try {
                 HttpUtility.sendGetRequest(requestURL);
@@ -178,37 +208,29 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
                     Log.i("RG-res", String.valueOf(line));
 
                     try {
-
-
                         JSONArray jsonroutes = new JSONArray(line);
                         for (int i=0; i<jsonroutes.length(); i++) {
                             JSONObject actor = jsonroutes.getJSONObject(i);
+                            String id = actor.getString("_id");
                             String name = actor.getString("line_name_en");
-                            routes.add(name);
+                            routes.add(id +" "+name);
                             //Log.i("RG-res-name", String.valueOf(name));
                         }
-
-
-
                     }
                     catch (JSONException e) {
                         e.printStackTrace();
                     }
-
-
                 }
             } catch (IOException ex) {
                 ex.printStackTrace();
 
             }
             HttpUtility.disconnect();
-
             return routes;
         }
 
         @Override
         protected void onPostExecute(final List<String> result) {
-
             super.onPostExecute(result);
             mAdapter.addAll(routes);
 
@@ -220,6 +242,78 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
 
         }
 
+        @Override
+        protected void onCancelled() {
+
+        }
+    }
+
+
+
+    //get all the waypoints of the selected route
+    public class GetWaypoints extends AsyncTask<String, Void, List<LatLng>> {
+        //private final ArrayAdapter<String> mAdapter;
+
+
+        @Override
+        protected List<LatLng> doInBackground(String... params) {
+            // test sending POST request
+            Map<String, String> params1 = new HashMap<String, String>();
+            String requestURL = "http://83.212.116.159/smartt/backend/api/routes/waypoints?route="+params[0]+"&dir="+params[1];
+
+            try {
+                HttpUtility.sendGetRequest(requestURL);
+                String[] response = HttpUtility.readMultipleLinesRespone();
+
+                for (String line : response) {
+                    System.out.println(line);
+                    Log.i("RG-res", String.valueOf(line));
+
+                    try {
+                        JSONObject jObject = new JSONObject(line);
+                        String success = jObject.getString("points");
+                        JSONArray jsonroutes = new JSONArray(success);
+                        for (int i=0; i<jsonroutes.length(); i++) {
+                            JSONObject actor = jsonroutes.getJSONObject(i);
+                            String lat = actor.getString("lat");
+                            String lon = actor.getString("lon");
+                            waypointList.add(new LatLng(Double.parseDouble(lat),Double.parseDouble(lon)));
+                            //Log.i("RG-res-name", String.valueOf(name));
+                        }
+                    }
+                    catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            HttpUtility.disconnect();
+
+            return waypointList;
+        }
+
+        @Override
+        protected void onPostExecute(final List<LatLng> result) {
+
+            super.onPostExecute(result);
+
+            Intent openStartingPoint = new Intent(RoutesActivity.this, MapsActivity.class);
+//            openStartingPoint.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+//            openStartingPoint.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            openStartingPoint.addFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            openStartingPoint.addFlags (Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            openStartingPoint.putExtra("isFromRouteValue", true);
+            openStartingPoint.putParcelableArrayListExtra("waypoints", (ArrayList<LatLng>) result);
+            startActivity(openStartingPoint);
+
+            Log.i("list after", String.valueOf(routes.size()));
+        }
+
+        @Override
+        protected void onPreExecute() {
+
+        }
 
         @Override
         protected void onCancelled() {
