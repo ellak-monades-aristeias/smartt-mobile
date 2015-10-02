@@ -24,7 +24,9 @@ import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,6 +40,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.PolylineOptions;
+
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBarDrawerToggle;
 
@@ -75,6 +79,9 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     private String mActivityTitle;
     public ArrayList<String> stopLines = new ArrayList<String>();
     public View v;
+    boolean isFromRoutes = false;
+    ArrayList<LatLng> waypointsRouteList = new  ArrayList<LatLng>();
+    ArrayList<GetStopsNearMe> routeStopsList = new ArrayList<GetStopsNearMe>();
 
     ArrayList<LatLng> nearstopslatlng = new ArrayList<LatLng>();
 
@@ -91,6 +98,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     ArrayList<MarkerOptions> markersList = new ArrayList<MarkerOptions>();
     Marker positionmarker;
     Utilities ut = new Utilities(this);
+    //public View CustomMarker = getLayoutInflater().inflate(R.layout.markerinfowindowlayout, null);
 
     private LocationProvider mLocationProvider;
 
@@ -105,7 +113,17 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
             Log.i("MAC",String.valueOf(ut.getMacAddress()));
         }
 
+        Bundle extra = getIntent().getExtras();
+        if (extra != null) {
+            isFromRoutes = extra.getBoolean("isFromRouteValue");
+            //Log.i("nikosa", "nikos " + isFromRoutes);
 
+            waypointsRouteList = extra.getParcelableArrayList("waypoints");
+
+            routeStopsList = (ArrayList<GetStopsNearMe>) extra.getSerializable("routeStops");
+        }else {
+            Log.i("nikosq","nikos " +isFromRoutes);
+        }
 
         mDrawerList = (ListView)findViewById(R.id.navList);
         mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
@@ -123,30 +141,67 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         gps = new GPSTracker(MapsActivity.this);
 
 
+
+
+
         try {
             // Loading map
             Log.i("RG", "Loading the map");
             initilizeMap();
             Log.i("RG", "After Loading the map");
 
-          /*  Toast.makeText(getApplicationContext(),
-                    String.valueOf(mMap.getMyLocation().getLatitude()
-                    ),
-                    Toast.LENGTH_SHORT)
-                    .show();
 
-*/
-            //LoadnearstopsTask nearstops = new LoadnearstopsTask(nearstopslatlng);
-            //nearstops.execute();
-
-
-            Log.i("Listsize",String.valueOf(nearstopslatlng.size()));
 
         } catch (Exception e) {
             e.printStackTrace();
         }
 
 
+//        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+//
+//            @Override
+//            public boolean onMarkerClick(Marker arg0) {
+//
+//                try {
+//
+//                    v = getLayoutInflater().inflate(R.layout.markerinfowindowlayout, null);
+//                    Log.i("RG", "After Loading the map when marker click");
+//                    v.isClickable();
+//                    int selectedMarkerIndex = -1; // On-select from list-view this needs to be highlighted in marker as selected
+//                    LinearLayout mapinnerLayout = (LinearLayout)v;
+//                    mapinnerLayout.removeView(v);
+//                    mMap.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(arg0.getPosition().latitude, arg0.getPosition().longitude)));
+//
+//                    LoadLinesfromStop loadlinesfromstop = new LoadLinesfromStop();
+//                    loadlinesfromstop.execute(arg0.getSnippet()).get();
+//
+//                    //v.setVisibility(View.VISIBLE);
+//                    TextView tv = (TextView) v.findViewById(R.id.StopName);
+//                    tv.setText(arg0.getTitle());
+//                    final ListView list = (ListView) v.findViewById(R.id.listView);
+//                    MarkerInfoAdapter listAdapter = new MarkerInfoAdapter(getApplicationContext(), stopLines, list);
+//                    //ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(getApplicationContext(), R.layout.simplerow, stopLines);
+//                    list.setAdapter(listAdapter);
+////                    if (selectedMarkerIndex >= 0) {
+////                        adapter.setSelected(selectedMarkerIndex);
+////                        list.setSelection(selectedMarkerIndex);
+////                    }
+////                    int height = getMarkerInfoHeight(markerClass.size(), list);
+//
+//                    RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(450,300);
+//                    layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+//                    layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+//                    //layoutParams.setMargins(0, getHeight() / 2 - (height+30), 0, 0);
+//                    mapinnerLayout.addView(v, layoutParams);
+//                    return true;
+//                } catch (Exception e) {
+//                    //e.printStackTrace();
+//                    Log.i("RG", "After Loading the map when marker click sto catch " + e.getMessage());
+//                    return false;
+//                }
+//
+//            }
+//        });
         // Setting a custom info window adapter for the google map
         mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
 
@@ -177,32 +232,35 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                     //String[] planets = new String[] { "Route1", "Route2", "Route3", "Route4"};
                     //ArrayList<String> planetList = new ArrayList<String>();
                     ListView list = (ListView) v.findViewById(R.id.ListItems);
-                    ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(getApplicationContext(), R.layout.simplerow, stopLines);
+                    //ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(getApplicationContext(), R.layout.simplerow, stopLines);
+                    MarkerInfoAdapter listAdapter = new MarkerInfoAdapter(getApplicationContext(), stopLines, list);
                     list.setAdapter(listAdapter);
 
-                    list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                        @Override
-                        public void onItemClick(AdapterView<?> adapter, View v, int position,
-                                                long arg3) {
-                            String value = (String) adapter.getItemAtPosition(position);
-                            Log.i("LIST", value);
-                            Toast.makeText(MapsActivity.this, value, Toast.LENGTH_SHORT).show();
-                            //Intent intent = new Intent("gr.hua.dit.smartt.MAIN");
-                            //startActivity(intent);
-
-//                            Intent openStartingPoint = new Intent(RoutesActivity.this, MapsActivity.class);
-//                            startActivity(openStartingPoint);
-                            // assuming string and if you want to get the value on click of list item
-                            // do what you intend to do on click of listview row
-                        }
-                    });
+//                    list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+//                        @Override
+//                        public void onItemClick(AdapterView<?> adapter, View v, int position,
+//                                                long arg3) {
+//                            String value = (String) adapter.getItemAtPosition(position);
+//                            Log.i("LIST", value);
+//                            Toast.makeText(MapsActivity.this, value, Toast.LENGTH_SHORT).show();
+//                            //Intent intent = new Intent("gr.hua.dit.smartt.MAIN");
+//                            //startActivity(intent);
+//
+////                            Intent openStartingPoint = new Intent(RoutesActivity.this, MapsActivity.class);
+////                            startActivity(openStartingPoint);
+//                            // assuming string and if you want to get the value on click of list item
+//                            // do what you intend to do on click of listview row
+//                        }
+//                    });
 
                     // Returning the view containing InfoWindow contents
 
                 } catch (InterruptedException e) {
                     e.printStackTrace();
+                    Log.i("RG", "After Loading the map when marker click sto catch " + e.getMessage());
                 } catch (ExecutionException e) {
                     e.printStackTrace();
+                    Log.i("RG", "After Loading the map when marker click sto catch1 " + e.getMessage());
                 }
                 // Getting the position from the marker
                 return v;
@@ -215,6 +273,29 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
 
         //end of onCreate
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        Log.i("nikosa2", "new intent ");
+        mMap.clear();
+        waypointsRouteList.clear();
+        Bundle extra = intent.getExtras();
+        if (extra != null) {
+            isFromRoutes = extra.getBoolean("isFromRouteValue");
+            //Log.i("nikosa2", "nikos " + isFromRoutes);
+
+            waypointsRouteList = extra.getParcelableArrayList("waypoints");
+            //Log.i("nikos way ", "nikos " + waypointsRouteList.size());
+
+            routeStopsList = (ArrayList<GetStopsNearMe>) extra.getSerializable("routeStops");
+        }
+
+        try {
+            initilizeMap();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -248,8 +329,14 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     }
 
     private void addDrawerItems() {
-        final String[] osArray = { "Login", "Routes", "Windows", "OS X", "Logout" };
-        mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, osArray);
+        final String[] osArray = { "Login", "Routes", "Give my location", "OS X", "Logout" };
+        final String[] osArrayRoutes = { "Login", "Routes", "Windows", "OS X", "Logout" };
+
+        if(isFromRoutes) {
+            mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, osArrayRoutes);
+        }else {
+            mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, osArray);
+        }
         mDrawerList.setAdapter(mAdapter);
 
         mDrawerList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -282,6 +369,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
                 if (id == 1) {
                     Toast.makeText(MapsActivity.this, "Routes!", Toast.LENGTH_SHORT).show();
+                    MapsActivity.this.finish();
                     Intent intent = new Intent("gr.hua.dit.smartt.ROUTES");
                     startActivity(intent);
                 }
@@ -402,25 +490,25 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         }
         mMap.setMyLocationEnabled(true);
 
-        if((!nettracker.isGPSEnabled)&&isOnline()){
+        if ((!nettracker.isGPSEnabled) && isOnline()) {
             nettracker.showSettingsAlert();
         }
         positioncheck();
 
-            mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
-                @Override
-                public boolean onMyLocationButtonClick() {
-                    Log.i("LOCATION", "in button click");
-                    if (mMap.getMyLocation() != null) {
-                        Toast.makeText(
-                                getApplicationContext(),
-                                "Accuracy " + String.valueOf(mMap.getMyLocation().getAccuracy()) + "\n" +
-                                        "Lat " + String.valueOf(mMap.getMyLocation().getLatitude()) + "\n" +
-                                        "Lon " + String.valueOf(mMap.getMyLocation().getLongitude()),
-                                Toast.LENGTH_SHORT).show();
+        mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
+            @Override
+            public boolean onMyLocationButtonClick() {
+                Log.i("LOCATION", "in button click");
+                if (mMap.getMyLocation() != null) {
+                    Toast.makeText(
+                            getApplicationContext(),
+                            "Accuracy " + String.valueOf(mMap.getMyLocation().getAccuracy()) + "\n" +
+                                    "Lat " + String.valueOf(mMap.getMyLocation().getLatitude()) + "\n" +
+                                    "Lon " + String.valueOf(mMap.getMyLocation().getLongitude()),
+                            Toast.LENGTH_SHORT).show();
 
 
-                        LatLng latlon = new LatLng(mMap.getMyLocation().getLatitude(), mMap.getMyLocation().getLongitude());
+                    LatLng latlon = new LatLng(mMap.getMyLocation().getLatitude(), mMap.getMyLocation().getLongitude());
                         mMap.moveCamera(CameraUpdateFactory.newLatLng(latlon));
                         mMap.animateCamera(CameraUpdateFactory.zoomTo(13));
                     }
@@ -437,6 +525,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         }else if(ut.loadStoredValue("map_type", "normal").equals("terrain")) {
             mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
         }
+
     }
 
     public void positioncheck() {
@@ -462,7 +551,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
 
             if(isOnline()) {
-                cameraUpdate = CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 11);
+                cameraUpdate = CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 14);
             }else {
                 cameraUpdate = CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 13);
             }
@@ -521,6 +610,31 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
     public void handleNewLocation(Location location) {
         mMap.clear();
+
+        if(isFromRoutes) {
+            PolylineOptions polylineOptions = new PolylineOptions();
+            polylineOptions.color(Color.GRAY);
+            polylineOptions.width(5);
+            polylineOptions.addAll(waypointsRouteList);
+
+            mMap.addPolyline(polylineOptions);
+
+//            mMap.addPolyline(new PolylineOptions()
+//                    .addAll(waypointsRouteList)
+//                    .width(5)
+//                    .color(Color.GRAY));
+
+
+            for(int i=0; i< routeStopsList.size(); i++) {
+                //marker = new MarkerOptions().position(new LatLng(latitude, longitude));
+                markersList.add(new MarkerOptions().position(new LatLng(routeStopsList.get(i).getStopLat(), routeStopsList.get(i).getStopLng())));
+                Log.i("emfanisi grammwn34", "teleiwnei to views " + String.valueOf(routeStopsList.get(i).getId()));
+                mMap.addMarker(new MarkerOptions().position(new LatLng(routeStopsList.get(i).getStopLat(), routeStopsList.get(i).getStopLng()))
+                        .icon(BitmapDescriptorFactory.fromResource(R.mipmap.busstop))
+                        .title(routeStopsList.get(i).getStopName())
+                        .snippet(routeStopsList.get(i).getId()+""));
+            }
+        }
         Log.d(TAG, location.toString());
 
         double currentLatitude = location.getLatitude();
@@ -533,8 +647,10 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 .title("I am here!");
         mMap.addMarker(options);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-        LoadnearstopsTask loadnearstopsTask = new LoadnearstopsTask();
-        loadnearstopsTask.execute(latLng);
+        if(!isFromRoutes) {
+            LoadnearstopsTask loadnearstopsTask = new LoadnearstopsTask();
+            loadnearstopsTask.execute(latLng);
+        }
 
         Toast.makeText(MapsActivity.this, "Location changed", Toast.LENGTH_SHORT).show();
 
@@ -687,54 +803,6 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
         }
 
-    }
-
-
-
-    public class GetStopsNearMe {
-        String stopName;
-        String id;
-        double stopLat;
-        double stopLng;
-
-        public GetStopsNearMe(String stopName, String id, double stopLat, double stopLng) {
-            this.stopName = stopName;
-            this.id = id;
-            this.stopLat = stopLat;
-            this.stopLng = stopLng;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public String getStopName() {
-            return stopName;
-        }
-
-        public double getStopLat() {
-            return stopLat;
-        }
-
-        public double getStopLng() {
-            return stopLng;
-        }
-
-        public void setStopName(String stopName) {
-            this.stopName = stopName;
-        }
-
-        public void setStopLat(double stopLat) {
-            this.stopLat = stopLat;
-        }
-
-        public void setStopLng(double stopLng) {
-            this.stopLng = stopLng;
-        }
     }
 
 }
