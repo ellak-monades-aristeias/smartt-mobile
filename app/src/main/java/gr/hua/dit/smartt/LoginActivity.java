@@ -322,7 +322,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
                             Intent intentBundle=new Intent(LoginActivity.this, MapsActivity.class);
                             Bundle bundle = new Bundle();
-                            bundle.putString("login",String.valueOf(message));
+                            bundle.putString("login",String.valueOf(email));
+                            bundle.putBoolean("isLoggedIn", true);
 
                             intentBundle.putExtras(bundle);
                             startActivity(intentBundle);

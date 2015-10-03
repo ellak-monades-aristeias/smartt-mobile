@@ -80,6 +80,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     public ArrayList<String> stopLines = new ArrayList<String>();
     public View v;
     boolean isFromRoutes = false;
+    boolean isLoggedIn = false;
     ArrayList<LatLng> waypointsRouteList = new  ArrayList<LatLng>();
     ArrayList<GetStopsNearMe> routeStopsList = new ArrayList<GetStopsNearMe>();
 
@@ -115,19 +116,21 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
         Bundle extra = getIntent().getExtras();
         if (extra != null) {
+            //from Routes
             isFromRoutes = extra.getBoolean("isFromRouteValue");
-            //Log.i("nikosa", "nikos " + isFromRoutes);
-
             waypointsRouteList = extra.getParcelableArrayList("waypoints");
-
             routeStopsList = (ArrayList<GetStopsNearMe>) extra.getSerializable("routeStops");
-        }else {
-            Log.i("nikosq","nikos " +isFromRoutes);
-        }
+            //from Login
+            //isLoggedIn = extra.getBoolean("isLoggedIn");
 
+        }
+        mActivityTitle = String.valueOf(ut.getEmailAddress());
+        if(ut.getEmailAddress().equals("none")) {
+            getSupportActionBar().setTitle("Your Position");
+        }
         mDrawerList = (ListView)findViewById(R.id.navList);
         mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
-        mActivityTitle = getTitle().toString();
+
 
         addDrawerItems();
         setupDrawer();
@@ -329,11 +332,12 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     }
 
     private void addDrawerItems() {
-        final String[] osArray = { "Login", "Routes", "Give my location", "OS X", "Logout" };
-        final String[] osArrayRoutes = { "Login", "Routes", "Windows", "OS X", "Logout" };
 
-        if(isFromRoutes) {
-            mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, osArrayRoutes);
+        final String[] osArray = { "Login", "Routes", "Give my location", "Rate SMARTT", "Exit SMARTT" };
+        final String[] osArrayLogin = { "Logout", "Routes", "Give my location", "Rate SMARTT", "Exit SMARTT" };
+
+        if(ut.getEmailAddress() != "none") {
+            mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, osArrayLogin);
         }else {
             mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, osArray);
         }
@@ -347,7 +351,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 //final double latitude = 37.98392;
                 //final double longitude = 23.72936;
                 Log.i("RG", String.valueOf(id) + ' ' + String.valueOf(position) + ' ' + String.valueOf(osArray[position]));
-                mMap.clear();
+                //mMap.clear();
 
                 if (mDrawerLayout.isDrawerOpen(mDrawerList)) {
                     mDrawerLayout.closeDrawer(mDrawerList);
@@ -355,33 +359,56 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 } else {
                     mDrawerLayout.openDrawer(mDrawerList);
                 }
+                //Login - Logout
                 if (id == 0) {
-
-                    if (ut.getEmailAddress() != "none") {
-                        Log.i("SV-email", String.valueOf(ut.getEmailAddress()));
-                        Toast.makeText(MapsActivity.this, "Logged in as " + String.valueOf(ut.getEmailAddress()), Toast.LENGTH_SHORT).show();
-                    } else {
-
-                        Intent intent = new Intent("gr.hua.dit.smartt.LOGIN");
-                        startActivity(intent);
+                    if(ut.getEmailAddress() != "none") {
+                        ut.clearPreferences();
+                        addDrawerItems();
+                        setupDrawer();
+                        Toast.makeText(MapsActivity.this, "You just logged out!", Toast.LENGTH_SHORT).show();
+                    }else {
+//                        if (ut.getEmailAddress() != "none") {
+//                            Log.i("SV-email", String.valueOf(ut.getEmailAddress()));
+//                            Toast.makeText(MapsActivity.this, "Logged in as " + String.valueOf(ut.getEmailAddress()), Toast.LENGTH_SHORT).show();
+//                        } else {
+                            MapsActivity.this.finish();
+                            Intent intent = new Intent("gr.hua.dit.smartt.LOGIN");
+                            startActivity(intent);
+//                        }
                     }
                 }
-
+                //Routes
                 if (id == 1) {
-                    Toast.makeText(MapsActivity.this, "Routes!", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(MapsActivity.this, "Routes!", Toast.LENGTH_SHORT).show();
                     MapsActivity.this.finish();
                     Intent intent = new Intent("gr.hua.dit.smartt.ROUTES");
                     startActivity(intent);
                 }
+                //Give my location
+                if (id == 2) {
+                    if(ut.getEmailAddress() != "none"){
 
+                    }else {
+                        Toast.makeText(MapsActivity.this, "You have to Login first!", Toast.LENGTH_SHORT).show();
+                    }
+                }
+                //Rate SMARTT
+                if (id == 3) {
+                    if(ut.getEmailAddress() != "none"){
+
+                    }else {
+                        Toast.makeText(MapsActivity.this, "You have to Login first if you want to Rate SMARTT!", Toast.LENGTH_SHORT).show();
+                    }
+                }
+                //Exit SMARTT
                 if (id == 4) {
-                    ut.clearPreferences();
-                    Toast.makeText(MapsActivity.this, "Cleared Cache", Toast.LENGTH_SHORT).show();
+                    finish();
+                    System.exit(0);
                 }
 
                 //marker = new MarkerOptions().position(new LatLng(latitude, longitude));
                 // adding marker
-                positionmarker = mMap.addMarker(marker);
+                //positionmarker = mMap.addMarker(marker);
 
 
             }
@@ -401,7 +428,11 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
             /** Called when a drawer has settled in a completely closed state. */
             public void onDrawerClosed(View view) {
                 super.onDrawerClosed(view);
-                getSupportActionBar().setTitle(mActivityTitle);
+                if(ut.getEmailAddress().equals("none")) {
+                    getSupportActionBar().setTitle("Your Position");
+                }else {
+                    getSupportActionBar().setTitle(mActivityTitle);
+                }
                 invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
             }
         };
@@ -740,8 +771,6 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
 
     public class LoadLinesfromStop extends AsyncTask<String, Void, List<String>> {
-
-
 
         @Override
         protected List<String> doInBackground(String... Params) {
