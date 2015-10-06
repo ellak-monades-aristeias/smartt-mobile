@@ -1,7 +1,9 @@
 package gr.hua.dit.smartt;
 
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
@@ -16,6 +18,7 @@ import android.support.v4.app.FragmentActivity;
 //import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -78,7 +81,6 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     private ActionBarDrawerToggle mDrawerToggle;
     private String mActivityTitle;
     public ArrayList<String> stopLines = new ArrayList<String>();
-    public View v;
     boolean isFromRoutes = false;
     boolean isLoggedIn = false;
     ArrayList<LatLng> waypointsRouteList = new  ArrayList<LatLng>();
@@ -89,7 +91,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
     public static final String TAG = MapsActivity.class.getSimpleName();
 
-    private GoogleMap mMap; // Might be null if Google Play services APK is not available.
+    private GoogleMap mMap; // Might be null if Google Play ser ices APK is not available.
 
     GPSTracker gps;
     NetworkTracker nettracker;
@@ -160,104 +162,36 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         }
 
 
-//        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-//
-//            @Override
-//            public boolean onMarkerClick(Marker arg0) {
-//
-//                try {
-//
-//                    v = getLayoutInflater().inflate(R.layout.markerinfowindowlayout, null);
-//                    Log.i("RG", "After Loading the map when marker click");
-//                    v.isClickable();
-//                    int selectedMarkerIndex = -1; // On-select from list-view this needs to be highlighted in marker as selected
-//                    LinearLayout mapinnerLayout = (LinearLayout)v;
-//                    mapinnerLayout.removeView(v);
-//                    mMap.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(arg0.getPosition().latitude, arg0.getPosition().longitude)));
-//
-//                    LoadLinesfromStop loadlinesfromstop = new LoadLinesfromStop();
-//                    loadlinesfromstop.execute(arg0.getSnippet()).get();
-//
-//                    //v.setVisibility(View.VISIBLE);
-//                    TextView tv = (TextView) v.findViewById(R.id.StopName);
-//                    tv.setText(arg0.getTitle());
-//                    final ListView list = (ListView) v.findViewById(R.id.listView);
-//                    MarkerInfoAdapter listAdapter = new MarkerInfoAdapter(getApplicationContext(), stopLines, list);
-//                    //ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(getApplicationContext(), R.layout.simplerow, stopLines);
-//                    list.setAdapter(listAdapter);
-////                    if (selectedMarkerIndex >= 0) {
-////                        adapter.setSelected(selectedMarkerIndex);
-////                        list.setSelection(selectedMarkerIndex);
-////                    }
-////                    int height = getMarkerInfoHeight(markerClass.size(), list);
-//
-//                    RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(450,300);
-//                    layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-//                    layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
-//                    //layoutParams.setMargins(0, getHeight() / 2 - (height+30), 0, 0);
-//                    mapinnerLayout.addView(v, layoutParams);
-//                    return true;
-//                } catch (Exception e) {
-//                    //e.printStackTrace();
-//                    Log.i("RG", "After Loading the map when marker click sto catch " + e.getMessage());
-//                    return false;
-//                }
-//
-//            }
-//        });
-        // Setting a custom info window adapter for the google map
-        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
 
-            // Use default InfoWindow frame
             @Override
-            public View getInfoWindow(Marker arg0) {
-                return null;
-            }
-
-            // Defines the contents of the InfoWindow
-            @Override
-            public View getInfoContents(Marker arg0) {
-
-                // Getting view from the layout file info_window_layout
-                v = getLayoutInflater().inflate(R.layout.markerinfowindowlayout, null);
-                v.isClickable();
+            public boolean onMarkerClick(Marker arg0) {
                 LoadLinesfromStop loadlinesfromstop = new LoadLinesfromStop();
                 try {
+                loadlinesfromstop.execute(arg0.getSnippet()).get();
 
-                    Log.i("emfanisi grammwn3", "teleiwnei to views " + arg0.getSnippet());
-                    loadlinesfromstop.execute(arg0.getSnippet()).get();
+                AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this);
+                View customView = LayoutInflater.from(MapsActivity.this).inflate(
+                        R.layout.markerinfowindowlayout, null, false);
+                mMap.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(arg0.getPosition().latitude, arg0.getPosition().longitude)));
+                TextView tv = (TextView) customView.findViewById(R.id.StopName);
+                tv.setText(arg0.getTitle());
+                ListView listView = (ListView) customView.findViewById(R.id.ListItems);
+                Log.i("epistrefei",stopLines.size()+" !");
+                AlertListAdapter mAdapter = new AlertListAdapter(stopLines, getBaseContext());
+                listView.setAdapter(mAdapter);
+                //listView.setOnItemClickListener(mOnItemClick);
+                listView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+                dialog.setView(customView);
+                dialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 
-                    String stopName = arg0.getTitle();
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // TODO Auto-generated method stub
 
-                    // Getting reference to the TextView to set latitude
-                    TextView tvName = (TextView) v.findViewById(R.id.StopName);
-                    tvName.setText(stopName);
-                    //String[] planets = new String[] { "Route1", "Route2", "Route3", "Route4"};
-                    //ArrayList<String> planetList = new ArrayList<String>();
-                    ListView list = (ListView) v.findViewById(R.id.ListItems);
-                    //ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(getApplicationContext(), R.layout.simplerow, stopLines);
-                    MarkerInfoAdapter listAdapter = new MarkerInfoAdapter(getApplicationContext(), stopLines, list);
-                    list.setAdapter(listAdapter);
-
-//                    list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//                        @Override
-//                        public void onItemClick(AdapterView<?> adapter, View v, int position,
-//                                                long arg3) {
-//                            String value = (String) adapter.getItemAtPosition(position);
-//                            Log.i("LIST", value);
-//                            Toast.makeText(MapsActivity.this, value, Toast.LENGTH_SHORT).show();
-//                            //Intent intent = new Intent("gr.hua.dit.smartt.MAIN");
-//                            //startActivity(intent);
-//
-////                            Intent openStartingPoint = new Intent(RoutesActivity.this, MapsActivity.class);
-////                            startActivity(openStartingPoint);
-//                            // assuming string and if you want to get the value on click of list item
-//                            // do what you intend to do on click of listview row
-//                        }
-//                    });
-
-                    // Returning the view containing InfoWindow contents
-
+                    }
+                });
+                dialog.show();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     Log.i("RG", "After Loading the map when marker click sto catch " + e.getMessage());
@@ -265,15 +199,73 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                     e.printStackTrace();
                     Log.i("RG", "After Loading the map when marker click sto catch1 " + e.getMessage());
                 }
-                // Getting the position from the marker
-                return v;
+                return true;
             }
         });
-
-
-
-
-
+//        // Setting a custom info window adapter for the google map
+//        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+//
+//            // Use default InfoWindow frame
+//            @Override
+//            public View getInfoWindow(Marker arg0) {
+//                return null;
+//            }
+//
+//            // Defines the contents of the InfoWindow
+//            @Override
+//            public View getInfoContents(Marker arg0) {
+//
+//                // Getting view from the layout file info_window_layout
+//                v = getLayoutInflater().inflate(R.layout.markerinfowindowlayout, null);
+//                v.isClickable();
+//                LoadLinesfromStop loadlinesfromstop = new LoadLinesfromStop();
+//                try {
+//
+//                    Log.i("emfanisi grammwn3", "teleiwnei to views " + arg0.getSnippet());
+//                    loadlinesfromstop.execute(arg0.getSnippet()).get();
+//
+//                    String stopName = arg0.getTitle();
+//
+//                    // Getting reference to the TextView to set latitude
+//                    TextView tvName = (TextView) v.findViewById(R.id.StopName);
+//                    tvName.setText(stopName);
+//                    //String[] planets = new String[] { "Route1", "Route2", "Route3", "Route4"};
+//                    //ArrayList<String> planetList = new ArrayList<String>();
+//                    ListView list = (ListView) v.findViewById(R.id.ListItems);
+//                    //ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(getApplicationContext(), R.layout.simplerow, stopLines);
+//                    MarkerInfoAdapter listAdapter = new MarkerInfoAdapter(getApplicationContext(), stopLines, list);
+//                    list.setAdapter(listAdapter);
+//
+////                    list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+////                        @Override
+////                        public void onItemClick(AdapterView<?> adapter, View v, int position,
+////                                                long arg3) {
+////                            String value = (String) adapter.getItemAtPosition(position);
+////                            Log.i("LIST", value);
+////                            Toast.makeText(MapsActivity.this, value, Toast.LENGTH_SHORT).show();
+////                            //Intent intent = new Intent("gr.hua.dit.smartt.MAIN");
+////                            //startActivity(intent);
+////
+//////                            Intent openStartingPoint = new Intent(RoutesActivity.this, MapsActivity.class);
+//////                            startActivity(openStartingPoint);
+////                            // assuming string and if you want to get the value on click of list item
+////                            // do what you intend to do on click of listview row
+////                        }
+////                    });
+//
+//                    // Returning the view containing InfoWindow contents
+//
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                    Log.i("RG", "After Loading the map when marker click sto catch " + e.getMessage());
+//                } catch (ExecutionException e) {
+//                    e.printStackTrace();
+//                    Log.i("RG", "After Loading the map when marker click sto catch1 " + e.getMessage());
+//                }
+//                // Getting the position from the marker
+//                return v;
+//            }
+//        });
 
         //end of onCreate
     }
@@ -361,19 +353,19 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 }
                 //Login - Logout
                 if (id == 0) {
-                    if(ut.getEmailAddress() != "none") {
+                    if (ut.getEmailAddress() != "none") {
                         ut.clearPreferences();
                         addDrawerItems();
                         setupDrawer();
                         Toast.makeText(MapsActivity.this, "You just logged out!", Toast.LENGTH_SHORT).show();
-                    }else {
+                    } else {
 //                        if (ut.getEmailAddress() != "none") {
 //                            Log.i("SV-email", String.valueOf(ut.getEmailAddress()));
 //                            Toast.makeText(MapsActivity.this, "Logged in as " + String.valueOf(ut.getEmailAddress()), Toast.LENGTH_SHORT).show();
 //                        } else {
-                            MapsActivity.this.finish();
-                            Intent intent = new Intent("gr.hua.dit.smartt.LOGIN");
-                            startActivity(intent);
+                        MapsActivity.this.finish();
+                        Intent intent = new Intent("gr.hua.dit.smartt.LOGIN");
+                        startActivity(intent);
 //                        }
                     }
                 }
@@ -386,17 +378,17 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 }
                 //Give my location
                 if (id == 2) {
-                    if(ut.getEmailAddress() != "none"){
+                    if (ut.getEmailAddress() != "none") {
 
-                    }else {
+                    } else {
                         Toast.makeText(MapsActivity.this, "You have to Login first!", Toast.LENGTH_SHORT).show();
                     }
                 }
                 //Rate SMARTT
                 if (id == 3) {
-                    if(ut.getEmailAddress() != "none"){
+                    if (ut.getEmailAddress() != "none") {
 
-                    }else {
+                    } else {
                         Toast.makeText(MapsActivity.this, "You have to Login first if you want to Rate SMARTT!", Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -430,8 +422,10 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 super.onDrawerClosed(view);
                 if(ut.getEmailAddress().equals("none")) {
                     getSupportActionBar().setTitle("Your Position");
+                    Log.i("emfanisi", ut.getEmailAddress());
                 }else {
                     getSupportActionBar().setTitle(mActivityTitle);
+                    Log.i("emfanisi2", ut.getEmailAddress());
                 }
                 invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
             }
@@ -540,12 +534,12 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
 
                     LatLng latlon = new LatLng(mMap.getMyLocation().getLatitude(), mMap.getMyLocation().getLongitude());
-                        mMap.moveCamera(CameraUpdateFactory.newLatLng(latlon));
-                        mMap.animateCamera(CameraUpdateFactory.zoomTo(13));
-                    }
-                    return true;
+                    mMap.moveCamera(CameraUpdateFactory.newLatLng(latlon));
+                    mMap.animateCamera(CameraUpdateFactory.zoomTo(13));
                 }
-            });
+                return true;
+            }
+        });
 
 
 

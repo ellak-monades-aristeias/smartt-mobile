@@ -209,13 +209,13 @@ public class NetworkTracker extends Service {
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(mContext);
 
         // Setting Dialog Title
-        alertDialog.setTitle("ÈÝëåôå íá åíåñãïðïéÞóåôå ôï GPS óáò;");
+        alertDialog.setTitle("Ενεργοποίηση του GPS");
 
         // Setting Dialog Message
-        alertDialog.setMessage("Ãéá ìåãáëýôåñç áêñßâåéá ôçò ôïðïèåóßáò óáò åíåñãïðïéÞóôå ôï GPS");
+        alertDialog.setMessage("Θέλετε να ενεργοποιήσετε το GPS;");
 
         // On pressing Settings button
-        alertDialog.setPositiveButton("Íáé", new DialogInterface.OnClickListener() {
+        alertDialog.setPositiveButton("Ναί", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
                 Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                 mContext.startActivity(intent);
@@ -223,7 +223,7 @@ public class NetworkTracker extends Service {
         });
 
         // on pressing cancel button
-        alertDialog.setNegativeButton("¼÷é", new DialogInterface.OnClickListener() {
+        alertDialog.setNegativeButton("Όχι", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
                 dialog.cancel();
             }
