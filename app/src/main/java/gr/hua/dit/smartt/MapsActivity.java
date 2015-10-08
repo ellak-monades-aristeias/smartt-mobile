@@ -26,6 +26,7 @@ import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -73,6 +74,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import static java.lang.Double.parseDouble;
+
 
 public class MapsActivity extends AppCompatActivity implements LocationProvider.LocationCallback {
     private ListView mDrawerList;
@@ -85,6 +88,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     boolean isLoggedIn = false;
     ArrayList<LatLng> waypointsRouteList = new  ArrayList<LatLng>();
     ArrayList<GetStopsNearMe> routeStopsList = new ArrayList<GetStopsNearMe>();
+    private ArrayList<LatLng> waypointList = new ArrayList<LatLng>();
 
     ArrayList<LatLng> nearstopslatlng = new ArrayList<LatLng>();
 
@@ -176,14 +180,63 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 mMap.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(arg0.getPosition().latitude, arg0.getPosition().longitude)));
                 TextView tv = (TextView) customView.findViewById(R.id.StopName);
                 tv.setText(arg0.getTitle());
-                ListView listView = (ListView) customView.findViewById(R.id.ListItems);
-                Log.i("epistrefei",stopLines.size()+" !");
-                AlertListAdapter mAdapter = new AlertListAdapter(stopLines, getBaseContext());
+                final ListView listView = (ListView) customView.findViewById(R.id.ListItems);
+                Log.i("epistrefei", stopLines.size() + " !");
+                final AlertListAdapter mAdapter = new AlertListAdapter(stopLines, getBaseContext());
                 listView.setAdapter(mAdapter);
+                listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position,
+                                            long id) {
+                        String value = (String) stopLines.get(position);
+                        String[] parts = value.split(" ", 2);
+                        final String getIdFromValue = parts[0].trim();
+                        String[] partsName = parts[1].split("-");
+                        String firstName = partsName[0].trim();
+                        String lastName = partsName[partsName.length - 1].trim();
+
+                        final Dialog dialog = new Dialog(MapsActivity.this);
+                        dialog.setContentView(R.layout.routepopup);
+                        dialog.setTitle("ΚΑΤΕΥΘΥΝΣΗ");
+                        Button btn = (Button) dialog.findViewById(R.id.route1);
+                        Button btn2 = (Button) dialog.findViewById(R.id.route2);
+                        btn.setText("Προς: " + firstName);
+                        btn2.setText("Προς: " + lastName);
+                        dialog.show();
+
+                        btn.setOnClickListener(new View.OnClickListener() {
+                            public void onClick(View v) {
+                                try {
+                                    new GetRouteStops().execute(getIdFromValue, "0").get();
+                                    new GetWaypoints().execute(getIdFromValue, "0");
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                } catch (ExecutionException e) {
+                                    e.printStackTrace();
+                                }
+
+                            }
+                        });
+
+                        btn2.setOnClickListener(new View.OnClickListener() {
+                            public void onClick(View v) {
+                                try {
+                                    new GetRouteStops().execute(getIdFromValue, "1").get();
+                                    new GetWaypoints().execute(getIdFromValue, "1");
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                } catch (ExecutionException e) {
+                                    e.printStackTrace();
+                                }
+
+                            }
+                        });
+                    }
+                });
                 //listView.setOnItemClickListener(mOnItemClick);
                 listView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
                 dialog.setView(customView);
-                dialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                dialog.setPositiveButton("Back", new DialogInterface.OnClickListener() {
 
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -202,77 +255,12 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 return true;
             }
         });
-//        // Setting a custom info window adapter for the google map
-//        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
-//
-//            // Use default InfoWindow frame
-//            @Override
-//            public View getInfoWindow(Marker arg0) {
-//                return null;
-//            }
-//
-//            // Defines the contents of the InfoWindow
-//            @Override
-//            public View getInfoContents(Marker arg0) {
-//
-//                // Getting view from the layout file info_window_layout
-//                v = getLayoutInflater().inflate(R.layout.markerinfowindowlayout, null);
-//                v.isClickable();
-//                LoadLinesfromStop loadlinesfromstop = new LoadLinesfromStop();
-//                try {
-//
-//                    Log.i("emfanisi grammwn3", "teleiwnei to views " + arg0.getSnippet());
-//                    loadlinesfromstop.execute(arg0.getSnippet()).get();
-//
-//                    String stopName = arg0.getTitle();
-//
-//                    // Getting reference to the TextView to set latitude
-//                    TextView tvName = (TextView) v.findViewById(R.id.StopName);
-//                    tvName.setText(stopName);
-//                    //String[] planets = new String[] { "Route1", "Route2", "Route3", "Route4"};
-//                    //ArrayList<String> planetList = new ArrayList<String>();
-//                    ListView list = (ListView) v.findViewById(R.id.ListItems);
-//                    //ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(getApplicationContext(), R.layout.simplerow, stopLines);
-//                    MarkerInfoAdapter listAdapter = new MarkerInfoAdapter(getApplicationContext(), stopLines, list);
-//                    list.setAdapter(listAdapter);
-//
-////                    list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-////                        @Override
-////                        public void onItemClick(AdapterView<?> adapter, View v, int position,
-////                                                long arg3) {
-////                            String value = (String) adapter.getItemAtPosition(position);
-////                            Log.i("LIST", value);
-////                            Toast.makeText(MapsActivity.this, value, Toast.LENGTH_SHORT).show();
-////                            //Intent intent = new Intent("gr.hua.dit.smartt.MAIN");
-////                            //startActivity(intent);
-////
-//////                            Intent openStartingPoint = new Intent(RoutesActivity.this, MapsActivity.class);
-//////                            startActivity(openStartingPoint);
-////                            // assuming string and if you want to get the value on click of list item
-////                            // do what you intend to do on click of listview row
-////                        }
-////                    });
-//
-//                    // Returning the view containing InfoWindow contents
-//
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                    Log.i("RG", "After Loading the map when marker click sto catch " + e.getMessage());
-//                } catch (ExecutionException e) {
-//                    e.printStackTrace();
-//                    Log.i("RG", "After Loading the map when marker click sto catch1 " + e.getMessage());
-//                }
-//                // Getting the position from the marker
-//                return v;
-//            }
-//        });
 
         //end of onCreate
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
-        Log.i("nikosa2", "new intent ");
         mMap.clear();
         waypointsRouteList.clear();
         Bundle extra = intent.getExtras();
@@ -669,7 +657,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         //mMap.addMarker(new MarkerOptions().position(new LatLng(currentLatitude, currentLongitude)).title("Current Location"));
         MarkerOptions options = new MarkerOptions()
                 .position(latLng)
-                .title("I am here!");
+                .title("Η τοποθεσία μου!");
         mMap.addMarker(options);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
         if(!isFromRoutes) {
@@ -826,6 +814,147 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
         }
 
+    }
+
+
+
+    public class GetWaypoints extends AsyncTask<String, Void, List<LatLng>> {
+        //private final ArrayAdapter<String> mAdapter;
+        String route;
+        String dir;
+
+        @Override
+        protected List<LatLng> doInBackground(String... params) {
+            route = params[0];
+            dir = params[1];
+            // test sending POST request
+            Map<String, String> params1 = new HashMap<String, String>();
+            String requestURL = "http://83.212.116.159/smartt/backend/api/routes/waypoints?route="+route+"&dir="+dir;
+
+            try {
+                HttpUtility.sendGetRequest(requestURL);
+                String[] response = HttpUtility.readMultipleLinesRespone();
+
+                for (String line : response) {
+                    System.out.println(line);
+                    Log.i("RG-res", String.valueOf(line));
+
+                    try {
+                        JSONObject jObject = new JSONObject(line);
+                        String success = jObject.getString("points");
+                        JSONArray jsonroutes = new JSONArray(success);
+                        for (int i=0; i<jsonroutes.length(); i++) {
+                            JSONObject actor = jsonroutes.getJSONObject(i);
+                            String lat = actor.getString("lat");
+                            String lon = actor.getString("lon");
+                            waypointList.add(new LatLng(parseDouble(lat), parseDouble(lon)));
+                            //Log.i("RG-res-name", String.valueOf(name));
+                        }
+                    }
+                    catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            HttpUtility.disconnect();
+
+            return waypointList;
+        }
+
+        @Override
+        protected void onPostExecute(final List<LatLng> result) {
+
+            super.onPostExecute(result);
+
+
+            MapsActivity.this.finish();
+            Intent openStartingPoint = new Intent(MapsActivity.this, MapsActivity.class);
+//            openStartingPoint.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+//            openStartingPoint.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            openStartingPoint.addFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            openStartingPoint.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            openStartingPoint.putExtra("isFromRouteValue", true);
+            openStartingPoint.putParcelableArrayListExtra("waypoints", (ArrayList<LatLng>) result);
+            openStartingPoint.putExtra("routeStops", (ArrayList<GetStopsNearMe>) routeStopsList);
+            startActivity(openStartingPoint);
+
+        }
+
+        @Override
+        protected void onPreExecute() {
+
+        }
+
+        @Override
+        protected void onCancelled() {
+
+        }
+    }
+
+
+    //get all the waypoints of the selected route
+    public class GetRouteStops extends AsyncTask<String, Void, List<GetStopsNearMe>> {
+        //private final ArrayAdapter<String> mAdapter;
+
+
+        @Override
+        protected List<GetStopsNearMe> doInBackground(String... params) {
+            // test sending POST request
+
+            String requestURL = "http://83.212.116.159/smartt/backend/api/routes/routestops?route="+params[0]+"&dir="+params[1];
+
+            try {
+                HttpUtility.sendGetRequest(requestURL);
+                String[] response = HttpUtility.readMultipleLinesRespone();
+
+                for (String line : response) {
+                    System.out.println(line);
+                    Log.i("RG-res", String.valueOf(line));
+
+                    try {
+                        JSONObject jObject = new JSONObject(line);
+                        String success = jObject.getString("stops");
+                        JSONArray jsonroutes = new JSONArray(success);
+                        for (int i=0; i<jsonroutes.length(); i++) {
+                            JSONObject actor = jsonroutes.getJSONObject(i);
+                            String id = actor.getString("s_id");
+                            String name = actor.getString("name_el");
+                            String lat = actor.getString("lat");
+                            String lon = actor.getString("lon");
+                            routeStopsList.add(new GetStopsNearMe(name, id, Double.parseDouble(lat), Double.parseDouble(lon)));
+                            //Log.i("RG-res-name", String.valueOf(name));
+                        }
+                    }
+                    catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            HttpUtility.disconnect();
+
+            return routeStopsList;
+        }
+
+        @Override
+        protected void onPostExecute(final List<GetStopsNearMe> result) {
+
+            super.onPostExecute(result);
+
+        }
+
+        @Override
+        protected void onPreExecute() {
+
+        }
+
+        @Override
+        protected void onCancelled() {
+
+        }
     }
 
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical" android:layout_width="wrap_content"
-    android:layout_height="wrap_content">
+    android:layout_height="100dp">
 
     <TextView
         android:id="@+id/StopName"
@@ -10,12 +10,16 @@
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:layout_gravity="center_horizontal"
-        android:textSize="16sp"
-        android:textColor="#4e0e79" />
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#4e0e79"
+        android:paddingBottom="10dp"
+        android:paddingTop="5dp"/>
 
     <ListView
         android:id="@+id/ListItems"
         android:layout_gravity="center_horizontal"
+        android:scrollbars="vertical"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         >
