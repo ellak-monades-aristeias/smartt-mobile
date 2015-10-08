@@ -207,6 +207,8 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                         btn.setOnClickListener(new View.OnClickListener() {
                             public void onClick(View v) {
                                 try {
+                                    waypointsRouteList.clear();
+                                    routeStopsList.clear();
                                     new GetRouteStops().execute(getIdFromValue, "0").get();
                                     new GetWaypoints().execute(getIdFromValue, "0");
                                 } catch (InterruptedException e) {
@@ -221,6 +223,8 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                         btn2.setOnClickListener(new View.OnClickListener() {
                             public void onClick(View v) {
                                 try {
+                                    waypointsRouteList.clear();
+                                    routeStopsList.clear();
                                     new GetRouteStops().execute(getIdFromValue, "1").get();
                                     new GetWaypoints().execute(getIdFromValue, "1");
                                 } catch (InterruptedException e) {
@@ -375,7 +379,9 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 //Rate SMARTT
                 if (id == 3) {
                     if (ut.getEmailAddress() != "none") {
-
+                        MapsActivity.this.finish();
+                        Intent intent = new Intent("gr.hua.dit.smartt.RATE");
+                        startActivity(intent);
                     } else {
                         Toast.makeText(MapsActivity.this, "You have to Login first if you want to Rate SMARTT!", Toast.LENGTH_SHORT).show();
                     }

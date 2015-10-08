@@ -14,6 +14,7 @@ import android.os.Parcelable;
 import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -26,6 +27,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupWindow;
+import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
@@ -45,13 +47,14 @@ import java.util.concurrent.ExecutionException;
 
 import static java.lang.Double.*;
 
-public class RoutesActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+public class RoutesActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>, SearchView.OnQueryTextListener {
 
     private RoutesFetch mRoutesFetchTask = null;
     private List<String> routes = new ArrayList<String>();
     private ArrayList<LatLng> waypointList = new ArrayList<LatLng>();
     private ArrayList<GetStopsNearMe> routeStopsList = new ArrayList<GetStopsNearMe>();
     private ListView lv;
+    private SearchView mSearchView;
 
 
 
@@ -63,8 +66,9 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
 
 
         Log.i("list", String.valueOf(routes.size()));
-        ListView lv = (ListView) findViewById(R.id.listView);
-
+        mSearchView=(SearchView) findViewById(R.id.searchView);
+        lv = (ListView) findViewById(R.id.listView);
+        Button btn = (Button) findViewById(R.id.back);
 
         Log.i("list after", String.valueOf(routes.size()));
 
@@ -75,8 +79,19 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
 
 
         lv.setAdapter(arrayAdapter);
+        lv.setTextFilterEnabled(true);
+        setupSearchView();
         mRoutesFetchTask = new RoutesFetch(arrayAdapter);
         mRoutesFetchTask.execute();
+
+        btn.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                //DO SOMETHING! {RUN SOME FUNCTION ... DO CHECKS... ETC}
+                RoutesActivity.this.finish();
+                Intent intent = new Intent(RoutesActivity.this, MapsActivity.class);
+                startActivity(intent);
+            }
+        });
 
         lv.setOnItemClickListener(new OnItemClickListener() {
             @Override
@@ -136,6 +151,25 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
     }
 
 
+    private void setupSearchView() {
+        mSearchView.setIconifiedByDefault(false);
+        mSearchView.setOnQueryTextListener(this);
+        mSearchView.setSubmitButtonEnabled(true);
+        mSearchView.setQueryHint("Search Here");
+    }
+
+    public boolean onQueryTextChange(String newText) {
+        if (TextUtils.isEmpty(newText)) {
+            lv.clearTextFilter();
+        } else {
+            lv.setFilterText(newText.toString());
+        }
+        return true;
+    }
+
+    public boolean onQueryTextSubmit(String query) {
+        return false;
+    }
 
 
     @Override

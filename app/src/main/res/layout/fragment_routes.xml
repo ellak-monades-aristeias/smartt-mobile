@@ -7,6 +7,11 @@
     tools:context="gr.hua.dit.smartt.RoutesActivityFragment"
     tools:showIn="@layout/activity_routes">
 
+    <SearchView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/searchView" />
+
     <ListView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -14,8 +19,15 @@
         android:layout_centerHorizontal="true"
         android:choiceMode="singleChoice"
         android:divider="#0000CC"
-        />
+        android:layout_below="@+id/searchView"/>
 
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/listView"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/back"
+        android:text="Back"/>
 
 </RelativeLayout>

@@ -5,4 +5,9 @@
         <!-- Customize your theme here. -->
     </style>
 
+    <style name="BusBar" parent="@android:style/Widget.RatingBar">
+        <item name="android:progressDrawable">@mipmap/gray_bus</item>
+        <item name="android:indeterminateDrawable">@mipmap/blue_bus</item>
+    </style>
+
 </resources>

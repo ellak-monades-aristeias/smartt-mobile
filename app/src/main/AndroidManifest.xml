@@ -64,6 +64,14 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".RateAppActivity"
+            android:label="@string/title_activity_rate" >
+            <intent-filter>
+                <action android:name="gr.hua.dit.smartt.RATE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>
