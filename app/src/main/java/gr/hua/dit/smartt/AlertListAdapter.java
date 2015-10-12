@@ -15,11 +15,11 @@ import java.util.ArrayList;
  */
 public class AlertListAdapter extends BaseAdapter {
 
-    ArrayList<String> mData;
+    ArrayList<GetLinesNearStop> mData;
     Context mContext;
     LayoutInflater inflater;
 
-    public AlertListAdapter(ArrayList<String> data, Context context) {
+    public AlertListAdapter(ArrayList<GetLinesNearStop> data, Context context) {
         mData = data;
         mContext = context;
         inflater = LayoutInflater.from(context);
@@ -50,7 +50,7 @@ public class AlertListAdapter extends BaseAdapter {
         }
         TextView tvTitle = (TextView) convertView.findViewById(R.id.rowTextView);
 
-        tvTitle.setText(mData.get(position));
+        tvTitle.setText(mData.get(position).getStopName());
 
         return convertView;
     }

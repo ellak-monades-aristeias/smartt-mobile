@@ -53,8 +53,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            style="@style/BusBar"
             android:id="@+id/comfortBar" />
+            <!--style="@style/BusBar"-->
+
 
     </LinearLayout>
 
@@ -76,8 +77,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            style="@style/BusBar"
             android:id="@+id/routeDurationBar" />
+            <!--style="@style/BusBar"-->
+
 
     </LinearLayout>
 
@@ -99,8 +101,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            style="@style/BusBar"
-            android:id="@+id/driverRatingBar" />
+            android:id="@+id/driverRatingBar"/>
+            <!--style="@style/BusBar"-->
+
 
     </LinearLayout>
 
@@ -115,14 +118,14 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Back"
+            android:text="  Back  "
             android:id="@+id/backbutton"/>
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Rate!"
-            android:id="@+id/okbutton"/>
+            android:text="  Rate!  "
+            android:id="@+id/ratebutton"/>
 
     </LinearLayout>
 

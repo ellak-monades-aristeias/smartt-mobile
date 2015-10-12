@@ -13,6 +13,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.FragmentActivity;
 //import android.support.v4.widget.DrawerLayout;
 //import android.support.v7.app.ActionBarDrawerToggle;
@@ -67,11 +68,15 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 
 import static java.lang.Double.parseDouble;
@@ -83,14 +88,22 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     private ArrayAdapter<String> mAdapter;
     private ActionBarDrawerToggle mDrawerToggle;
     private String mActivityTitle;
-    public ArrayList<String> stopLines = new ArrayList<String>();
+    public ArrayList<GetLinesNearStop> stopLines = new ArrayList<GetLinesNearStop>();
+    public ArrayList<GetLinesNearStop> nearlines = new ArrayList<GetLinesNearStop>();
     boolean isFromRoutes = false;
     boolean isLoggedIn = false;
-    ArrayList<LatLng> waypointsRouteList = new  ArrayList<LatLng>();
     ArrayList<GetStopsNearMe> routeStopsList = new ArrayList<GetStopsNearMe>();
-    private ArrayList<LatLng> waypointList = new ArrayList<LatLng>();
-
+    MarkerOptions options;
     ArrayList<LatLng> nearstopslatlng = new ArrayList<LatLng>();
+    boolean isStartGiveLocation = false;
+    double currentLatitude;
+    double currentLongitude;
+    boolean stopLoop;
+   // final Handler handler = new Handler();
+    static Timer timer;
+    static TimerTask timerTask;
+    static Handler handler = new Handler();
+    final ArrayList<String> drawerlist = new ArrayList<String>();
 
 
     public static final String TAG = MapsActivity.class.getSimpleName();
@@ -124,7 +137,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         if (extra != null) {
             //from Routes
             isFromRoutes = extra.getBoolean("isFromRouteValue");
-            waypointsRouteList = extra.getParcelableArrayList("waypoints");
+            isStartGiveLocation = extra.getBoolean("isStartGiveLocation");
             routeStopsList = (ArrayList<GetStopsNearMe>) extra.getSerializable("routeStops");
             //from Login
             //isLoggedIn = extra.getBoolean("isLoggedIn");
@@ -188,53 +201,18 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                     @Override
                     public void onItemClick(AdapterView<?> parent, View view, int position,
                                             long id) {
-                        String value = (String) stopLines.get(position);
+
+                        String value = (String) stopLines.get(position).getStopName();
                         String[] parts = value.split(" ", 2);
                         final String getIdFromValue = parts[0].trim();
-                        String[] partsName = parts[1].split("-");
-                        String firstName = partsName[0].trim();
-                        String lastName = partsName[partsName.length - 1].trim();
 
-                        final Dialog dialog = new Dialog(MapsActivity.this);
-                        dialog.setContentView(R.layout.routepopup);
-                        dialog.setTitle("ΚΑΤΕΥΘΥΝΣΗ");
-                        Button btn = (Button) dialog.findViewById(R.id.route1);
-                        Button btn2 = (Button) dialog.findViewById(R.id.route2);
-                        btn.setText("Προς: " + firstName);
-                        btn2.setText("Προς: " + lastName);
-                        dialog.show();
 
-                        btn.setOnClickListener(new View.OnClickListener() {
-                            public void onClick(View v) {
-                                try {
-                                    waypointsRouteList.clear();
-                                    routeStopsList.clear();
-                                    new GetRouteStops().execute(getIdFromValue, "0").get();
-                                    new GetWaypoints().execute(getIdFromValue, "0");
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                } catch (ExecutionException e) {
-                                    e.printStackTrace();
-                                }
-
-                            }
-                        });
-
-                        btn2.setOnClickListener(new View.OnClickListener() {
-                            public void onClick(View v) {
-                                try {
-                                    waypointsRouteList.clear();
-                                    routeStopsList.clear();
-                                    new GetRouteStops().execute(getIdFromValue, "1").get();
-                                    new GetWaypoints().execute(getIdFromValue, "1");
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                } catch (ExecutionException e) {
-                                    e.printStackTrace();
-                                }
-
-                            }
-                        });
+                        routeStopsList.clear();
+                        if(stopLines.get(position).getdirectionid().equals("1")) {
+                            new GetRouteStops("").execute(getIdFromValue, "1");
+                        }else {
+                            new GetRouteStops("").execute(getIdFromValue, "0");
+                        }
                     }
                 });
                 //listView.setOnItemClickListener(mOnItemClick);
@@ -266,15 +244,10 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     @Override
     protected void onNewIntent(Intent intent) {
         mMap.clear();
-        waypointsRouteList.clear();
         Bundle extra = intent.getExtras();
         if (extra != null) {
             isFromRoutes = extra.getBoolean("isFromRouteValue");
-            //Log.i("nikosa2", "nikos " + isFromRoutes);
-
-            waypointsRouteList = extra.getParcelableArrayList("waypoints");
-            //Log.i("nikos way ", "nikos " + waypointsRouteList.size());
-
+            isStartGiveLocation = extra.getBoolean("isStartGiveLocation");
             routeStopsList = (ArrayList<GetStopsNearMe>) extra.getSerializable("routeStops");
         }
 
@@ -319,14 +292,23 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
         final String[] osArray = { "Login", "Routes", "Give my location", "Rate SMARTT", "Exit SMARTT" };
         final String[] osArrayLogin = { "Logout", "Routes", "Give my location", "Rate SMARTT", "Exit SMARTT" };
+        final String[] osArrayLoginGiveLocation = { "Logout", "Routes", "Stop give my location", "Rate SMARTT", "Exit SMARTT" };
 
         if(ut.getEmailAddress() != "none") {
-            mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, osArrayLogin);
+            if(isStartGiveLocation) {
+                drawerlist.addAll(Arrays.asList(osArrayLoginGiveLocation));
+            }else {
+                drawerlist.addAll(Arrays.asList(osArrayLogin));
+            }
+            //mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, osArrayLogin);
         }else {
-            mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, osArray);
+            drawerlist.addAll(Arrays.asList(osArray));
+            //mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, osArray);
         }
-        mDrawerList.setAdapter(mAdapter);
 
+        mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, drawerlist);
+
+        mDrawerList.setAdapter(mAdapter);
         mDrawerList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -344,8 +326,10 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                     mDrawerLayout.openDrawer(mDrawerList);
                 }
                 //Login - Logout
+
                 if (id == 0) {
                     if (ut.getEmailAddress() != "none") {
+                        MapsActivity.stoptimertask();
                         ut.clearPreferences();
                         addDrawerItems();
                         setupDrawer();
@@ -371,8 +355,67 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 //Give my location
                 if (id == 2) {
                     if (ut.getEmailAddress() != "none") {
+                        if(isStartGiveLocation) {
+                            MapsActivity.stoptimertask();
+                            //stopRepeatingTask();
+                            //loop("","","","");
+                            isStartGiveLocation = false;
+                            drawerlist.set(2, "Give my location");
+                            mAdapter.notifyDataSetChanged();
 
-                    } else {
+                            Log.i("parametroi", "isStartGiveLocation " + isStartGiveLocation);
+                        }else {
+                            LoadNearLines loadnearlines = new LoadNearLines();
+                            try {
+                                loadnearlines.execute(String.valueOf(options.getPosition().latitude),
+                                        String.valueOf(options.getPosition().longitude)).get();
+
+                                AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this);
+                                View customView = LayoutInflater.from(MapsActivity.this).inflate(
+                                        R.layout.markerinfowindowlayout, null, false);
+                                mMap.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(options.getPosition().latitude, options.getPosition().longitude)));
+                                TextView tv = (TextView) customView.findViewById(R.id.StopName);
+                                tv.setText("Κοντινές διαδρομές");
+                                final ListView listView = (ListView) customView.findViewById(R.id.ListItems);
+                                final AlertListAdapter mAdapter = new AlertListAdapter(nearlines, getBaseContext());
+                                listView.setAdapter(mAdapter);
+                                listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                                    @Override
+                                    public void onItemClick(AdapterView<?> parent, View view, int position,
+                                                            final long id) {
+                                        String value = (String) nearlines.get(position).getStopName();
+                                        String[] parts = value.split(" ", 2);
+                                        final String getIdFromValue = parts[0].trim();
+
+                                        routeStopsList.clear();
+                                        if(nearlines.get(position).getdirectionid().equals("1")) {
+                                            new GetRouteStops("givelocation").execute(getIdFromValue, "1");
+                                            //loop(getIdFromValue, "1", String.valueOf(options.getPosition().latitude), String.valueOf(options.getPosition().longitude));
+                                            MapsActivity.startTimer();
+                                        }else {
+                                            new GetRouteStops("givelocation").execute(getIdFromValue, "0");
+                                            //loop(getIdFromValue, "1", String.valueOf(options.getPosition().latitude), String.valueOf(options.getPosition().longitude));
+                                            MapsActivity.startTimer();
+                                        }
+                                    }
+                                });
+                                dialog.setView(customView);
+                                dialog.setPositiveButton("Back", new DialogInterface.OnClickListener() {
+
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        // TODO Auto-generated method stub
+
+                                    }
+                                });
+                                dialog.show();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            } catch (ExecutionException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }else {
                         Toast.makeText(MapsActivity.this, "You have to Login first!", Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -388,15 +431,10 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 }
                 //Exit SMARTT
                 if (id == 4) {
+                    MapsActivity.stoptimertask();
                     finish();
                     System.exit(0);
                 }
-
-                //marker = new MarkerOptions().position(new LatLng(latitude, longitude));
-                // adding marker
-                //positionmarker = mMap.addMarker(marker);
-
-
             }
         });
     }
@@ -416,10 +454,8 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 super.onDrawerClosed(view);
                 if(ut.getEmailAddress().equals("none")) {
                     getSupportActionBar().setTitle("Your Position");
-                    Log.i("emfanisi", ut.getEmailAddress());
                 }else {
                     getSupportActionBar().setTitle(mActivityTitle);
-                    Log.i("emfanisi2", ut.getEmailAddress());
                 }
                 invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
             }
@@ -631,18 +667,6 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         mMap.clear();
 
         if(isFromRoutes) {
-            PolylineOptions polylineOptions = new PolylineOptions();
-            polylineOptions.color(Color.GRAY);
-            polylineOptions.width(5);
-            polylineOptions.addAll(waypointsRouteList);
-
-            mMap.addPolyline(polylineOptions);
-
-//            mMap.addPolyline(new PolylineOptions()
-//                    .addAll(waypointsRouteList)
-//                    .width(5)
-//                    .color(Color.GRAY));
-
 
             for(int i=0; i< routeStopsList.size(); i++) {
                 //marker = new MarkerOptions().position(new LatLng(latitude, longitude));
@@ -656,12 +680,12 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         }
         Log.d(TAG, location.toString());
 
-        double currentLatitude = location.getLatitude();
-        double currentLongitude = location.getLongitude();
+        currentLatitude = location.getLatitude();
+        currentLongitude = location.getLongitude();
         LatLng latLng = new LatLng(currentLatitude, currentLongitude);
 
         //mMap.addMarker(new MarkerOptions().position(new LatLng(currentLatitude, currentLongitude)).title("Current Location"));
-        MarkerOptions options = new MarkerOptions()
+        options = new MarkerOptions()
                 .position(latLng)
                 .title("Η τοποθεσία μου!");
         mMap.addMarker(options);
@@ -727,8 +751,8 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 }
             } catch (IOException ex) {
                 ex.printStackTrace();
-                Intent intent = new Intent("gr.hua.dit.smartt.LOGIN");
-                startActivity(intent);
+                //Intent intent = new Intent("gr.hua.dit.smartt.LOGIN");
+                //startActivity(intent);
 
             }
             HttpUtility.disconnect();
@@ -758,10 +782,10 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
 
 
-    public class LoadLinesfromStop extends AsyncTask<String, Void, List<String>> {
+    public class LoadLinesfromStop extends AsyncTask<String, Void, List<GetLinesNearStop>> {
 
         @Override
-        protected List<String> doInBackground(String... Params) {
+        protected List<GetLinesNearStop> doInBackground(String... Params) {
             stopLines.clear();
             String stopId = Params[0];
 
@@ -787,9 +811,16 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                             JSONObject actor = jsonroutes.getJSONObject(i);
                             String lineId = actor.getString("line_id");
                             String lineName = actor.getString("line_name_el");
+                            String directionFlag = actor.getString("direction_flag");
 
-                            stopLines.add(lineId + " " + lineName);
-                            Log.i("emfanisi grammwn2", stopId + " " + lineName);
+                            String[] partsName = lineName.split("-");
+                            String firstName = partsName[0].trim();
+                            String lastName = partsName[partsName.length - 1].trim();
+                            if(directionFlag.equals("1")) {
+                                stopLines.add(new GetLinesNearStop(lineId + " " + lineName + " ( " + lastName + " )" ,directionFlag));
+                            }else if (directionFlag.equals("2")) {
+                                stopLines.add(new GetLinesNearStop(lineId + " " + lineName + " ( " + firstName + " )" ,directionFlag));
+                            }
                         }
 
                     }
@@ -801,18 +832,16 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 }
             } catch (IOException ex) {
                 ex.printStackTrace();
-                Intent intent = new Intent("gr.hua.dit.smartt.LOGIN");
-                startActivity(intent);
+                //Intent intent = new Intent("gr.hua.dit.smartt.LOGIN");
+                //startActivity(intent);
 
             }
             HttpUtility.disconnect();
-
-            Log.i("stopLines", stopLines.size()+"");
             return stopLines;
         }
 
         @Override
-        protected void onPostExecute(List<String> myLatLng) {
+        protected void onPostExecute(List<GetLinesNearStop> myLatLng) {
             Log.i("emfanisi grammwn", stopLines.toString());
             //planetList.addAll(stopLines);
 
@@ -822,95 +851,21 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
     }
 
-
-
-    public class GetWaypoints extends AsyncTask<String, Void, List<LatLng>> {
-        //private final ArrayAdapter<String> mAdapter;
-        String route;
-        String dir;
-
-        @Override
-        protected List<LatLng> doInBackground(String... params) {
-            route = params[0];
-            dir = params[1];
-            // test sending POST request
-            Map<String, String> params1 = new HashMap<String, String>();
-            String requestURL = "http://83.212.116.159/smartt/backend/api/routes/waypoints?route="+route+"&dir="+dir;
-
-            try {
-                HttpUtility.sendGetRequest(requestURL);
-                String[] response = HttpUtility.readMultipleLinesRespone();
-
-                for (String line : response) {
-                    System.out.println(line);
-                    Log.i("RG-res", String.valueOf(line));
-
-                    try {
-                        JSONObject jObject = new JSONObject(line);
-                        String success = jObject.getString("points");
-                        JSONArray jsonroutes = new JSONArray(success);
-                        for (int i=0; i<jsonroutes.length(); i++) {
-                            JSONObject actor = jsonroutes.getJSONObject(i);
-                            String lat = actor.getString("lat");
-                            String lon = actor.getString("lon");
-                            waypointList.add(new LatLng(parseDouble(lat), parseDouble(lon)));
-                            //Log.i("RG-res-name", String.valueOf(name));
-                        }
-                    }
-                    catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                }
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-            HttpUtility.disconnect();
-
-            return waypointList;
-        }
-
-        @Override
-        protected void onPostExecute(final List<LatLng> result) {
-
-            super.onPostExecute(result);
-
-
-            MapsActivity.this.finish();
-            Intent openStartingPoint = new Intent(MapsActivity.this, MapsActivity.class);
-//            openStartingPoint.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-//            openStartingPoint.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            openStartingPoint.addFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            openStartingPoint.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            openStartingPoint.putExtra("isFromRouteValue", true);
-            openStartingPoint.putParcelableArrayListExtra("waypoints", (ArrayList<LatLng>) result);
-            openStartingPoint.putExtra("routeStops", (ArrayList<GetStopsNearMe>) routeStopsList);
-            startActivity(openStartingPoint);
-
-        }
-
-        @Override
-        protected void onPreExecute() {
-
-        }
-
-        @Override
-        protected void onCancelled() {
-
-        }
-    }
-
-
-    //get all the waypoints of the selected route
+    //get all the routestops of the selected route
     public class GetRouteStops extends AsyncTask<String, Void, List<GetStopsNearMe>> {
         //private final ArrayAdapter<String> mAdapter;
+        private final String mgivelocation;
 
+        GetRouteStops(String givelocation) {
+            mgivelocation = givelocation;
+        }
 
         @Override
         protected List<GetStopsNearMe> doInBackground(String... params) {
             // test sending POST request
 
             String requestURL = "http://83.212.116.159/smartt/backend/api/routes/routestops?route="+params[0]+"&dir="+params[1];
-
+            Log.i("RG-res-requestURL", requestURL);
             try {
                 HttpUtility.sendGetRequest(requestURL);
                 String[] response = HttpUtility.readMultipleLinesRespone();
@@ -930,7 +885,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                             String lat = actor.getString("lat");
                             String lon = actor.getString("lon");
                             routeStopsList.add(new GetStopsNearMe(name, id, Double.parseDouble(lat), Double.parseDouble(lon)));
-                            //Log.i("RG-res-name", String.valueOf(name));
+                            Log.i("RG-res-name", String.valueOf(name));
                         }
                     }
                     catch (JSONException e) {
@@ -949,7 +904,18 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         protected void onPostExecute(final List<GetStopsNearMe> result) {
 
             super.onPostExecute(result);
-
+            MapsActivity.this.finish();
+            Intent openStartingPoint = new Intent(MapsActivity.this, MapsActivity.class);
+            openStartingPoint.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            openStartingPoint.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            openStartingPoint.putExtra("isFromRouteValue", true);
+            if(mgivelocation.equals("givelocation")) {
+                openStartingPoint.putExtra("isStartGiveLocation", true);
+            }else {
+                openStartingPoint.putExtra("isStartGiveLocation", false);
+            }
+            openStartingPoint.putExtra("routeStops", (ArrayList<GetStopsNearMe>) routeStopsList);
+            startActivity(openStartingPoint);
         }
 
         @Override
@@ -963,6 +929,221 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         }
     }
 
+
+    public class LoadNearLines extends AsyncTask<String, Void, List<GetLinesNearStop>> {
+
+        @Override
+        protected List<GetLinesNearStop> doInBackground(String... Params) {
+            nearlines.clear();
+            String lat = Params[0];
+            String lng = Params[1];
+
+            String requestURL = "http://83.212.116.159/smartt/backend/api/routes/nearlines?lat=" + lat + "&lon=" + lng;
+
+            try {
+                HttpUtility.sendGetRequest(requestURL);
+
+                String[] response = HttpUtility.readMultipleLinesRespone();
+
+                for (String line : response) {
+                    System.out.println(line);
+                    Log.i("RG-res", String.valueOf(line));
+
+                    try {
+                        JSONObject jObject = new JSONObject(line);
+                        String success = jObject.getString("lines");
+                        Log.i("RG-login success", String.valueOf(success));
+
+
+                        JSONArray jsonroutes = new JSONArray(success);
+                        for (int i=0; i<jsonroutes.length(); i++) {
+                            JSONObject actor = jsonroutes.getJSONObject(i);
+                            String lineId = actor.getString("line_id");
+                            String lineName = actor.getString("line_name_el");
+                            String directionFlag = actor.getString("direction_flag");
+
+
+                            String[] partsName = lineName.split("-");
+                            String firstName = partsName[0].trim();
+                            String lastName = partsName[partsName.length - 1].trim();
+                            if(directionFlag.equals("1")) {
+                                nearlines.add(new GetLinesNearStop(lineId + " " + lineName + " ( " + lastName + " )" ,directionFlag));
+                            }else if (directionFlag.equals("2")) {
+                                nearlines.add(new GetLinesNearStop(lineId + " " + lineName + " ( " + firstName + " )" ,directionFlag));
+                            }
+                        }
+
+                    }
+                    catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                //Intent intent = new Intent("gr.hua.dit.smartt.LOGIN");
+                //startActivity(intent);
+
+            }
+            HttpUtility.disconnect();
+
+            return nearlines;
+        }
+
+        @Override
+        protected void onPostExecute(List<GetLinesNearStop> myLatLng) {
+
+        }
+
+    }
+
+
+   // public void loop(final String routeId, final String routeDirection, final String lat,final String lon) {
+
+//        Runnable mHandlerTask = new Runnable()
+//        {
+//            @Override
+//            public void run() {
+//                Log.i("parametroi", "mesa sto loop " + this);
+//                //new UpdateLocationTask(routeId,routeDirection, lat,lon).execute();
+//
+//                handler.postDelayed(mHandlerTask, 10000);
+//            }
+//        };
+//      //  mHandlerTask.run();
+//   // }
+//
+//
+//    void startRepeatingTask()
+//    {
+//        mHandlerTask.run();
+//    }
+//
+//    void stopRepeatingTask()
+//    {
+//
+//        handler.removeCallbacks(mHandlerTask);
+//        Log.i("parametroi","in stop repeating");
+//    }
+
+    public static void startTimer() {
+        //set a new Timer
+        timer = new Timer();
+
+        //initialize the TimerTask's job
+        initializeTimerTask();
+
+        //schedule the timer, after the first 5000ms the TimerTask will run every 10000ms
+        timer.schedule(timerTask, 0, 10000); //
+        Log.i("parametroi ", "start timer");
+    }
+
+    public static void stoptimertask() {
+        //stop the timer, if it's not already null
+        Log.i("parametroi ", "in stop timer");
+
+        if (timer != null) {
+            Log.i("parametroi ", "if in stop timer");
+            timer.cancel();
+            timer = null;
+        }
+    }
+
+    public static void initializeTimerTask() {
+
+        timerTask = new TimerTask() {
+            public void run() {
+
+                //use a handler to run a toast that shows the current timestamp
+                handler.post(new Runnable() {
+                    public void run() {
+                        //get the current timeStamp
+                        Log.i("parametroi", "mesa sto loop ");
+                        //new UpdateLocationTask(routeId,routeDirection, lat,lon).execute();
+                    }
+                });
+            }
+        };
+    }
+
+    public class UpdateLocationTask extends AsyncTask<Void, Void, Boolean> {
+
+        private final String mrouteId;
+        private final String mrouteDirection;
+        private final String mlatit;
+        private final String mlongit;
+
+
+        UpdateLocationTask(String routeId, String routeDirection, String latit, String longit) {
+            mrouteId = routeId;
+            mrouteDirection = routeDirection;
+            mlatit = latit;
+            mlongit = longit;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+
+            String mac=ut.getMacAddress();
+
+            // test sending POST request
+            Map<String, String> params1 = new HashMap<String, String>();
+            String requestURL = getString(R.string.url_updateLocation);
+            params1.put("lat", mlatit);
+            params1.put("lon", mlongit);
+            params1.put("email",String.valueOf(ut.loadStoredValue("app_email_address", "none")));
+            params1.put("route", mrouteId);
+            params1.put("dir", mrouteDirection);
+            Log.i("parametroi", mlatit + " - " + mlongit +
+            " / " + String.valueOf(ut.loadStoredValue("app_email_address", "none")) + " - " + mrouteId + " - " + mrouteDirection);
+
+            try {
+                HttpUtility.sendPostRequest(requestURL, params1);
+
+                String[] response = HttpUtility.readMultipleLinesRespone();
+
+                for (String line : response) {
+                    System.out.println(line);
+                    Log.i("RG-res", String.valueOf(line));
+
+                    try {
+                        JSONObject jObject = new JSONObject(line);
+                        String success = jObject.getString("success");
+                        String message = jObject.getString("message");
+
+                        Log.i("RG-giveLocation success", String.valueOf(success));
+                        Log.i("RG-giveLocation message", String.valueOf(message));
+
+                    }
+                    catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                //Intent intent = new Intent("gr.hua.dit.smartt.LOGIN");
+                //startActivity(intent);
+
+            }
+            HttpUtility.disconnect();
+
+
+            return true;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+
+        }
+
+        @Override
+        protected void onCancelled() {
+
+        }
+    }
 }
 
 
