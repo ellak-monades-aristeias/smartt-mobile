@@ -91,7 +91,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     public ArrayList<GetLinesNearStop> stopLines = new ArrayList<GetLinesNearStop>();
     public ArrayList<GetLinesNearStop> nearlines = new ArrayList<GetLinesNearStop>();
     boolean isFromRoutes = false;
-    boolean isLoggedIn = false;
+    boolean istracked = false;
     ArrayList<GetStopsNearMe> routeStopsList = new ArrayList<GetStopsNearMe>();
     MarkerOptions options;
     ArrayList<LatLng> nearstopslatlng = new ArrayList<LatLng>();
@@ -138,10 +138,15 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
             //from Routes
             isFromRoutes = extra.getBoolean("isFromRouteValue");
             isStartGiveLocation = extra.getBoolean("isStartGiveLocation");
+            if(extra.getBoolean("isFromRouteActivity")) {
+                new LoadBus(extra.getString("routeid"),extra.getString("routedir")).execute();
+            }else {
+                istracked = extra.getBoolean("tracked");
+                if (istracked) {
+                    new LoadBus(extra.getString("routeid"), extra.getString("routedir")).execute();
+                }
+            }
             routeStopsList = (ArrayList<GetStopsNearMe>) extra.getSerializable("routeStops");
-            //from Login
-            //isLoggedIn = extra.getBoolean("isLoggedIn");
-
         }
         mActivityTitle = String.valueOf(ut.getEmailAddress());
         if(ut.getEmailAddress().equals("none")) {
@@ -209,9 +214,18 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
                         routeStopsList.clear();
                         if(stopLines.get(position).getdirectionid().equals("1")) {
-                            new GetRouteStops("").execute(getIdFromValue, "1");
+                            if(stopLines.get(position).getTracked()==0){
+                                new GetRouteStops("","no",getIdFromValue, "1").execute();
+                            }else {
+                                new GetRouteStops("","yes",getIdFromValue, "1").execute();
+                            }
                         }else {
-                            new GetRouteStops("").execute(getIdFromValue, "0");
+                            if(stopLines.get(position).getTracked()==0){
+                                new GetRouteStops("","no",getIdFromValue, "0").execute();
+                            }else {
+                                new GetRouteStops("","yes",getIdFromValue, "0").execute();
+                            }
+
                         }
                     }
                 });
@@ -248,6 +262,14 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         if (extra != null) {
             isFromRoutes = extra.getBoolean("isFromRouteValue");
             isStartGiveLocation = extra.getBoolean("isStartGiveLocation");
+            if(extra.getBoolean("isFromRouteActivity")) {
+                new LoadBus(extra.getString("routeid"),extra.getString("routedir")).execute();
+            }else {
+                istracked = extra.getBoolean("tracked");
+                if (istracked) {
+                    new LoadBus(extra.getString("routeid"), extra.getString("routedir")).execute();
+                }
+            }
             routeStopsList = (ArrayList<GetStopsNearMe>) extra.getSerializable("routeStops");
         }
 
@@ -389,13 +411,19 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
                                         routeStopsList.clear();
                                         if(nearlines.get(position).getdirectionid().equals("1")) {
-                                            new GetRouteStops("givelocation").execute(getIdFromValue, "1");
-                                            //loop(getIdFromValue, "1", String.valueOf(options.getPosition().latitude), String.valueOf(options.getPosition().longitude));
-                                            MapsActivity.startTimer();
+                                            if(nearlines.get(position).getTracked()==0) {
+                                                new GetRouteStops("givelocation","no",getIdFromValue, "1").execute();
+                                            }else {
+                                                new GetRouteStops("givelocation","yes",getIdFromValue, "1").execute();
+                                            }
+                                            MapsActivity.this.startTimer(getIdFromValue, "1", String.valueOf(options.getPosition().latitude), String.valueOf(options.getPosition().longitude));
                                         }else {
-                                            new GetRouteStops("givelocation").execute(getIdFromValue, "0");
-                                            //loop(getIdFromValue, "1", String.valueOf(options.getPosition().latitude), String.valueOf(options.getPosition().longitude));
-                                            MapsActivity.startTimer();
+                                            if(nearlines.get(position).getTracked()==0) {
+                                                new GetRouteStops("givelocation","no",getIdFromValue, "0").execute();
+                                            }else {
+                                                new GetRouteStops("givelocation","yes",getIdFromValue, "0").execute();
+                                            }
+                                            MapsActivity.this.startTimer(getIdFromValue, "1", String.valueOf(options.getPosition().latitude), String.valueOf(options.getPosition().longitude));
                                         }
                                     }
                                 });
@@ -772,7 +800,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 mMap.addMarker(new MarkerOptions().position(new LatLng(mLatLng.get(i).getStopLat(), mLatLng.get(i).getStopLng()))
                         .icon(BitmapDescriptorFactory.fromResource(R.mipmap.busstop))
                         .title(mLatLng.get(i).getStopName())
-                        .snippet(mLatLng.get(i).getId()+""));
+                        .snippet(mLatLng.get(i).getId() + ""));
             }
 
         }
@@ -812,14 +840,15 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                             String lineId = actor.getString("line_id");
                             String lineName = actor.getString("line_name_el");
                             String directionFlag = actor.getString("direction_flag");
+                            int tracked = actor.getInt("tracked");
 
                             String[] partsName = lineName.split("-");
                             String firstName = partsName[0].trim();
                             String lastName = partsName[partsName.length - 1].trim();
                             if(directionFlag.equals("1")) {
-                                stopLines.add(new GetLinesNearStop(lineId + " " + lineName + " ( " + lastName + " )" ,directionFlag));
+                                stopLines.add(new GetLinesNearStop(lineId + " " + lineName + " ( " + lastName + " )" ,directionFlag,tracked));
                             }else if (directionFlag.equals("2")) {
-                                stopLines.add(new GetLinesNearStop(lineId + " " + lineName + " ( " + firstName + " )" ,directionFlag));
+                                stopLines.add(new GetLinesNearStop(lineId + " " + lineName + " ( " + firstName + " )" ,directionFlag,tracked));
                             }
                         }
 
@@ -855,16 +884,22 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     public class GetRouteStops extends AsyncTask<String, Void, List<GetStopsNearMe>> {
         //private final ArrayAdapter<String> mAdapter;
         private final String mgivelocation;
+        private final String mtracked;
+        private final String mrouteId;
+        private final String mdir;
 
-        GetRouteStops(String givelocation) {
+        GetRouteStops(String givelocation,String tracked,String routeid, String dir) {
             mgivelocation = givelocation;
+            mtracked = tracked;
+            mrouteId = routeid;
+            mdir = dir;
         }
 
         @Override
         protected List<GetStopsNearMe> doInBackground(String... params) {
             // test sending POST request
 
-            String requestURL = "http://83.212.116.159/smartt/backend/api/routes/routestops?route="+params[0]+"&dir="+params[1];
+            String requestURL = "http://83.212.116.159/smartt/backend/api/routes/routestops?route="+mrouteId+"&dir="+mdir;
             Log.i("RG-res-requestURL", requestURL);
             try {
                 HttpUtility.sendGetRequest(requestURL);
@@ -909,6 +944,14 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
             openStartingPoint.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             openStartingPoint.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
             openStartingPoint.putExtra("isFromRouteValue", true);
+            openStartingPoint.putExtra("isFromRouteActivity", false);
+            if(mtracked.equals("yes")) {
+                openStartingPoint.putExtra("routeid", mrouteId);
+                openStartingPoint.putExtra("routedir", mdir);
+                openStartingPoint.putExtra("tracked", true);
+            }else {
+                openStartingPoint.putExtra("tracked", false);
+            }
             if(mgivelocation.equals("givelocation")) {
                 openStartingPoint.putExtra("isStartGiveLocation", true);
             }else {
@@ -961,15 +1004,16 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                             String lineId = actor.getString("line_id");
                             String lineName = actor.getString("line_name_el");
                             String directionFlag = actor.getString("direction_flag");
+                            int tracked = actor.getInt("tracked");
 
 
                             String[] partsName = lineName.split("-");
                             String firstName = partsName[0].trim();
                             String lastName = partsName[partsName.length - 1].trim();
                             if(directionFlag.equals("1")) {
-                                nearlines.add(new GetLinesNearStop(lineId + " " + lineName + " ( " + lastName + " )" ,directionFlag));
+                                nearlines.add(new GetLinesNearStop(lineId + " " + lineName + " ( " + lastName + " )" ,directionFlag,tracked));
                             }else if (directionFlag.equals("2")) {
-                                nearlines.add(new GetLinesNearStop(lineId + " " + lineName + " ( " + firstName + " )" ,directionFlag));
+                                nearlines.add(new GetLinesNearStop(lineId + " " + lineName + " ( " + firstName + " )" ,directionFlag,tracked));
                             }
                         }
 
@@ -999,40 +1043,12 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     }
 
 
-   // public void loop(final String routeId, final String routeDirection, final String lat,final String lon) {
-
-//        Runnable mHandlerTask = new Runnable()
-//        {
-//            @Override
-//            public void run() {
-//                Log.i("parametroi", "mesa sto loop " + this);
-//                //new UpdateLocationTask(routeId,routeDirection, lat,lon).execute();
-//
-//                handler.postDelayed(mHandlerTask, 10000);
-//            }
-//        };
-//      //  mHandlerTask.run();
-//   // }
-//
-//
-//    void startRepeatingTask()
-//    {
-//        mHandlerTask.run();
-//    }
-//
-//    void stopRepeatingTask()
-//    {
-//
-//        handler.removeCallbacks(mHandlerTask);
-//        Log.i("parametroi","in stop repeating");
-//    }
-
-    public static void startTimer() {
+    public void startTimer(final String routeId, final String routeDirection, final String lat, final String lon) {
         //set a new Timer
         timer = new Timer();
 
         //initialize the TimerTask's job
-        initializeTimerTask();
+        initializeTimerTask(routeId,routeDirection, lat,lon);
 
         //schedule the timer, after the first 5000ms the TimerTask will run every 10000ms
         timer.schedule(timerTask, 0, 10000); //
@@ -1050,7 +1066,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         }
     }
 
-    public static void initializeTimerTask() {
+    public void initializeTimerTask(final String routeId, final String routeDirection, final String lat, final String lon) {
 
         timerTask = new TimerTask() {
             public void run() {
@@ -1060,7 +1076,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                     public void run() {
                         //get the current timeStamp
                         Log.i("parametroi", "mesa sto loop ");
-                        //new UpdateLocationTask(routeId,routeDirection, lat,lon).execute();
+                        new UpdateLocationTask(routeId,routeDirection, lat,lon).execute();
                     }
                 });
             }
@@ -1086,6 +1102,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         protected Boolean doInBackground(Void... params) {
 
             String mac=ut.getMacAddress();
+            boolean result=false;
 
             // test sending POST request
             Map<String, String> params1 = new HashMap<String, String>();
@@ -1114,7 +1131,11 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
                         Log.i("RG-giveLocation success", String.valueOf(success));
                         Log.i("RG-giveLocation message", String.valueOf(message));
-
+                        if(success.equals("true")) {
+                            result=true;
+                        }else {
+                            result=false;
+                        }
                     }
                     catch (JSONException e) {
                         e.printStackTrace();
@@ -1131,12 +1152,16 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
             HttpUtility.disconnect();
 
 
-            return true;
+            return result;
         }
 
         @Override
         protected void onPostExecute(final Boolean success) {
-
+            if(success) {
+                new LoadBus(mrouteId,mrouteDirection).execute();
+            }else {
+                Toast.makeText(MapsActivity.this, "Η τοποθεσία που δίνετε δεν αντιστοιχεί σε διαδρομή του ΟΑΣΑ!", Toast.LENGTH_SHORT).show();
+            }
         }
 
         @Override
@@ -1144,6 +1169,75 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
         }
     }
+
+    public class LoadBus extends AsyncTask<String, Void, List<LatLng>> {
+
+        ArrayList<LatLng> buslist = new ArrayList<LatLng>();
+        String mroute;
+        String mdir;
+
+        LoadBus(String route, String dir) {
+            mroute = route;
+            mdir = dir;
+        }
+
+        @Override
+        protected List<LatLng> doInBackground(String... Params) {
+
+
+            String requestURL = "http://83.212.116.159/smartt/backend/api/routes/buslocation?route=" + mroute + "&dir=" + mdir;
+
+            try {
+                HttpUtility.sendGetRequest(requestURL);
+
+                String[] response = HttpUtility.readMultipleLinesRespone();
+
+                for (String line : response) {
+
+                    try {
+                        JSONObject jObject = new JSONObject(line);
+                        String success = jObject.getString("");
+                        Log.i("RG-login success", String.valueOf(success));
+
+
+                        JSONArray jsonroutes = new JSONArray(success);
+                        for (int i=0; i<jsonroutes.length(); i++) {
+                            JSONObject actor = jsonroutes.getJSONObject(i);
+                            String lat = actor.getString("lat");
+                            String lon = actor.getString("lon");
+                            //String time = actor.getString("time");
+
+                            buslist.add(new LatLng(Double.parseDouble(lat),Double.parseDouble(lon)));
+                        }
+
+                    }
+                    catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                //Intent intent = new Intent("gr.hua.dit.smartt.LOGIN");
+                //startActivity(intent);
+
+            }
+            HttpUtility.disconnect();
+
+            return buslist;
+        }
+
+        @Override
+        protected void onPostExecute(List<LatLng> myLatLng) {
+            for(int i=0; i< myLatLng.size(); i++) {
+                mMap.addMarker(new MarkerOptions().position(new LatLng(myLatLng.get(i).latitude, myLatLng.get(i).longitude))
+                        .title("Διαδρομή " + mroute).icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_launcher)));
+            }
+        }
+
+    }
+
 }
 
 

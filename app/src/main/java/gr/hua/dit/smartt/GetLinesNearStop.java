@@ -6,10 +6,20 @@ package gr.hua.dit.smartt;
 public class GetLinesNearStop implements java.io.Serializable{
     String stopName;
     String directionid;
+    int tracked;
 
-    public GetLinesNearStop(String stopName, String directionid) {
+    public GetLinesNearStop(String stopName, String directionid, int tracked) {
         this.stopName = stopName;
         this.directionid = directionid;
+        this.tracked = tracked;
+    }
+
+    public int getTracked() {
+        return tracked;
+    }
+
+    public void setTracked(int tracked) {
+        this.tracked = tracked;
     }
 
     public String getStopName() {

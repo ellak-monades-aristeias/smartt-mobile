@@ -125,13 +125,13 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
                     dialog.show();
                     btn.setOnClickListener(new View.OnClickListener() {
                         public void onClick(View v) {
-                            new GetRouteStops().execute(getIdFromValue, "1");
+                            new GetRouteStops(getIdFromValue, "1").execute();
                         }
                     });
 
                     btn2.setOnClickListener(new View.OnClickListener() {
                         public void onClick(View v) {
-                            new GetRouteStops().execute(getIdFromValue, "0");
+                            new GetRouteStops(getIdFromValue, "0").execute();
                         }
                     });
                 }
@@ -295,13 +295,19 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
     //get all the routestops of the selected route
     public class GetRouteStops extends AsyncTask<String, Void, List<GetStopsNearMe>> {
         //private final ArrayAdapter<String> mAdapter;
+        private final String mrouteId;
+        private final String mdir;
 
+        GetRouteStops(String routeid, String dir) {
+            mrouteId = routeid;
+            mdir = dir;
+        }
 
         @Override
         protected List<GetStopsNearMe> doInBackground(String... params) {
             // test sending POST request
 
-            String requestURL = "http://83.212.116.159/smartt/backend/api/routes/routestops?route="+params[0]+"&dir="+params[1];
+            String requestURL = "http://83.212.116.159/smartt/backend/api/routes/routestops?route="+mrouteId+"&dir="+mdir;
 
             try {
                 HttpUtility.sendGetRequest(requestURL);
@@ -347,6 +353,10 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
             openStartingPoint.addFlags (Intent.FLAG_ACTIVITY_CLEAR_TOP);
             openStartingPoint.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
             openStartingPoint.putExtra("isFromRouteValue", true);
+            openStartingPoint.putExtra("isFromRouteActivity", true);
+            openStartingPoint.putExtra("routeid", mrouteId);
+            openStartingPoint.putExtra("routedir", mdir);
+            openStartingPoint.putExtra("tracked", true);
             openStartingPoint.putExtra("routeStops", (ArrayList<GetStopsNearMe>) routeStopsList);
             startActivity(openStartingPoint);
         }

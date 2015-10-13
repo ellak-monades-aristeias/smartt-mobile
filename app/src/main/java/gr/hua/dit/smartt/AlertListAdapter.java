@@ -2,6 +2,7 @@ package gr.hua.dit.smartt;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -51,7 +52,11 @@ public class AlertListAdapter extends BaseAdapter {
         TextView tvTitle = (TextView) convertView.findViewById(R.id.rowTextView);
 
         tvTitle.setText(mData.get(position).getStopName());
+        if(mData.get(position).getTracked() == 0){
 
+        }else {
+            tvTitle.setTextColor(Color.GREEN);
+        }
         return convertView;
     }
 }
