@@ -54,7 +54,6 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:id="@+id/comfortBar" />
-            <!--style="@style/BusBar"-->
 
 
     </LinearLayout>
@@ -78,7 +77,6 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:id="@+id/routeDurationBar" />
-            <!--style="@style/BusBar"-->
 
 
     </LinearLayout>
@@ -102,7 +100,6 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:id="@+id/driverRatingBar"/>
-            <!--style="@style/BusBar"-->
 
 
     </LinearLayout>
@@ -113,18 +110,18 @@
         android:layout_weight="1.4"
         android:gravity="center_horizontal"
         android:orientation="horizontal"
-        android:paddingTop="5dp">
+        >
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="  Back  "
+            android:text="Πίσω στο Χάρτη"
             android:id="@+id/backbutton"/>
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="  Rate!  "
+            android:text="Βαθμολόγησε το SMARTT!"
             android:id="@+id/ratebutton"/>
 
     </LinearLayout>

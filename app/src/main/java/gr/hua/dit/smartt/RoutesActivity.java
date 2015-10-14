@@ -55,6 +55,7 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
     private ArrayList<GetStopsNearMe> routeStopsList = new ArrayList<GetStopsNearMe>();
     private ListView lv;
     private SearchView mSearchView;
+    private Button backButton;
 
 
 
@@ -64,7 +65,15 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_routes);
 
-
+        backButton = (Button) findViewById(R.id.back);
+        backButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                //DO SOMETHING! {RUN SOME FUNCTION ... DO CHECKS... ETC}
+                RoutesActivity.this.finish();
+                Intent intent = new Intent(RoutesActivity.this, MapsActivity.class);
+                startActivity(intent);
+            }
+        });
         mRoutesFetchTask = new RoutesFetch();
         try {
             mRoutesFetchTask.execute().get();

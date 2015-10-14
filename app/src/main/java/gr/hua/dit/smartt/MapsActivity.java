@@ -104,6 +104,9 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     static TimerTask timerTask;
     static Handler handler = new Handler();
     final ArrayList<String> drawerlist = new ArrayList<String>();
+    ArrayList<GetStopsNearMe> buslist = new ArrayList<GetStopsNearMe>();
+    String routeDIR;
+    String routeID;
 
 
     public static final String TAG = MapsActivity.class.getSimpleName();
@@ -128,6 +131,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         setContentView(R.layout.activity_maps);
         //setUpMapIfNeeded();
 
+
         if(ut.loadStoredValue("app_mac_address", "none").equals("none")) {
             ut.savePreferences("app_mac_address", ut.getMacAddress());
             Log.i("MAC",String.valueOf(ut.getMacAddress()));
@@ -138,11 +142,16 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
             //from Routes
             isFromRoutes = extra.getBoolean("isFromRouteValue");
             isStartGiveLocation = extra.getBoolean("isStartGiveLocation");
+
             if(extra.getBoolean("isFromRouteActivity")) {
+                routeID = extra.getString("routeid");
+                routeDIR = extra.getString("routedir");
                 new LoadBus(extra.getString("routeid"),extra.getString("routedir")).execute();
             }else {
                 istracked = extra.getBoolean("tracked");
                 if (istracked) {
+                    routeID = extra.getString("routeid");
+                    routeDIR = extra.getString("routedir");
                     new LoadBus(extra.getString("routeid"), extra.getString("routedir")).execute();
                 }
             }
@@ -351,8 +360,9 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
                 if (id == 0) {
                     if (ut.getEmailAddress() != "none") {
-                        MapsActivity.stoptimertask();
+                        MapsActivity.this.stoptimertask();
                         ut.clearPreferences();
+                        mAdapter.clear();
                         addDrawerItems();
                         setupDrawer();
                         Toast.makeText(MapsActivity.this, "You just logged out!", Toast.LENGTH_SHORT).show();
@@ -378,7 +388,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 if (id == 2) {
                     if (ut.getEmailAddress() != "none") {
                         if(isStartGiveLocation) {
-                            MapsActivity.stoptimertask();
+                            MapsActivity.this.stoptimertask();
                             //stopRepeatingTask();
                             //loop("","","","");
                             isStartGiveLocation = false;
@@ -450,16 +460,22 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 //Rate SMARTT
                 if (id == 3) {
                     if (ut.getEmailAddress() != "none") {
-                        MapsActivity.this.finish();
-                        Intent intent = new Intent("gr.hua.dit.smartt.RATE");
-                        startActivity(intent);
+                        if(istracked) {
+                            MapsActivity.this.finish();
+                            Intent intent = new Intent("gr.hua.dit.smartt.RATE");
+                            intent.putExtra("routeid", routeID);
+                            intent.putExtra("routedir", routeDIR);
+                            startActivity(intent);
+                        }else {
+                            Toast.makeText(MapsActivity.this, "Θα πρέπει να δίνετε τη τοποθεσία σας για να μπορέσετε να βαθμολογήσετε την εφαρμογή!", Toast.LENGTH_SHORT).show();
+                        }
                     } else {
-                        Toast.makeText(MapsActivity.this, "You have to Login first if you want to Rate SMARTT!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MapsActivity.this, "Για να μπορέσετε να βαθμολογήσετε την εφαρμογή θα πρέπει να συνδεθείτε!", Toast.LENGTH_SHORT).show();
                     }
                 }
                 //Exit SMARTT
                 if (id == 4) {
-                    MapsActivity.stoptimertask();
+                    MapsActivity.this.stoptimertask();
                     finish();
                     System.exit(0);
                 }
@@ -601,19 +617,19 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
 
 
-        if(ut.loadStoredValue("map_type", "normal").equals("normal")) {
-            mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
-        }else if(ut.loadStoredValue("map_type", "normal").equals("hybrid")) {
-            mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
-        }else if(ut.loadStoredValue("map_type", "normal").equals("terrain")) {
-            mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
-        }
+//        if(ut.loadStoredValue("map_type", "normal").equals("normal")) {
+//            mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+//        }else if(ut.loadStoredValue("map_type", "normal").equals("hybrid")) {
+//            mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+//        }else if(ut.loadStoredValue("map_type", "normal").equals("terrain")) {
+//            mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+//        }
 
     }
 
     public void positioncheck() {
 
-        mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+        //mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
         mMap.getUiSettings().setCompassEnabled(true);
         mMap.getUiSettings().setMyLocationButtonEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(true);
@@ -1055,10 +1071,10 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         Log.i("parametroi ", "start timer");
     }
 
-    public static void stoptimertask() {
+    public void stoptimertask() {
         //stop the timer, if it's not already null
         Log.i("parametroi ", "in stop timer");
-
+        istracked=false;
         if (timer != null) {
             Log.i("parametroi ", "if in stop timer");
             timer.cancel();
@@ -1076,7 +1092,14 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                     public void run() {
                         //get the current timeStamp
                         Log.i("parametroi", "mesa sto loop ");
+                        //buslist.clear();
                         new UpdateLocationTask(routeId,routeDirection, lat,lon).execute();
+                        //for(int i=0; i< buslist.size(); i++) {
+//                            mMap.addMarker(new MarkerOptions().position(new LatLng(37.9891425, 23.761434))
+//                                    .icon(BitmapDescriptorFactory.fromResource(R.mipmap.gray_bus))
+//                                    .title("dnds")
+//                                    .snippet("sdfkjapiji"));
+                        //}
                     }
                 });
             }
@@ -1112,6 +1135,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
             params1.put("email",String.valueOf(ut.loadStoredValue("app_email_address", "none")));
             params1.put("route", mrouteId);
             params1.put("dir", mrouteDirection);
+
             Log.i("parametroi", mlatit + " - " + mlongit +
             " / " + String.valueOf(ut.loadStoredValue("app_email_address", "none")) + " - " + mrouteId + " - " + mrouteDirection);
 
@@ -1122,15 +1146,16 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
                 for (String line : response) {
                     System.out.println(line);
-                    Log.i("RG-res", String.valueOf(line));
+                    Log.i("RG-res2", String.valueOf(line));
 
                     try {
                         JSONObject jObject = new JSONObject(line);
-                        String success = jObject.getString("success");
                         String message = jObject.getString("message");
+                        String success = jObject.getString("success");
 
-                        Log.i("RG-giveLocation success", String.valueOf(success));
-                        Log.i("RG-giveLocation message", String.valueOf(message));
+                        Log.i("RG-giveLocation success", jObject.toString());
+                        Log.i("RG-giveLocation success", success);
+                        Log.i("RG-giveLocation message", message);
                         if(success.equals("true")) {
                             result=true;
                         }else {
@@ -1170,9 +1195,9 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         }
     }
 
-    public class LoadBus extends AsyncTask<String, Void, List<LatLng>> {
+    public class LoadBus extends AsyncTask<String, Void, ArrayList<GetStopsNearMe>> {
 
-        ArrayList<LatLng> buslist = new ArrayList<LatLng>();
+
         String mroute;
         String mdir;
 
@@ -1182,7 +1207,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         }
 
         @Override
-        protected List<LatLng> doInBackground(String... Params) {
+        protected ArrayList<GetStopsNearMe> doInBackground(String... Params) {
 
 
             String requestURL = "http://83.212.116.159/smartt/backend/api/routes/buslocation?route=" + mroute + "&dir=" + mdir;
@@ -1195,19 +1220,15 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 for (String line : response) {
 
                     try {
-                        JSONObject jObject = new JSONObject(line);
-                        String success = jObject.getString("");
-                        Log.i("RG-login success", String.valueOf(success));
-
-
-                        JSONArray jsonroutes = new JSONArray(success);
+                        JSONArray jsonroutes = new JSONArray(line);
                         for (int i=0; i<jsonroutes.length(); i++) {
                             JSONObject actor = jsonroutes.getJSONObject(i);
                             String lat = actor.getString("lat");
                             String lon = actor.getString("lon");
-                            //String time = actor.getString("time");
-
-                            buslist.add(new LatLng(Double.parseDouble(lat),Double.parseDouble(lon)));
+                            String time = actor.getString("time");
+                            String routeid = actor.getString("routeid");
+                            Log.i("RG-load bus success" , "mpaineiedw "+actor.toString());
+                            buslist.add(new GetStopsNearMe(time, routeid, Double.parseDouble(lat), Double.parseDouble(lon)));
                         }
 
                     }
@@ -1224,15 +1245,18 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
             }
             HttpUtility.disconnect();
-
+            Log.i("RG-load bus success", "buslist size  " + buslist.size());
             return buslist;
         }
 
         @Override
-        protected void onPostExecute(List<LatLng> myLatLng) {
-            for(int i=0; i< myLatLng.size(); i++) {
-                mMap.addMarker(new MarkerOptions().position(new LatLng(myLatLng.get(i).latitude, myLatLng.get(i).longitude))
-                        .title("Διαδρομή " + mroute).icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_launcher)));
+        protected void onPostExecute(ArrayList<GetStopsNearMe> myLatLng) {
+            //Log.i("RG-load bus success", "myLatLng size  " + myLatLng.get(0).latitude);
+            for(int i =0; i<myLatLng.size(); i++ ) {
+                mMap.addMarker(new MarkerOptions().position(new LatLng(myLatLng.get(i).getStopLat(), myLatLng.get(i).getStopLng()))
+                        .icon(BitmapDescriptorFactory.fromResource(R.mipmap.gray_bus))
+                        .title("dnds")
+                        .snippet("sdfkjapiji"));
             }
         }
 
