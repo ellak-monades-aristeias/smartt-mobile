@@ -29,7 +29,6 @@ import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.SearchView;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 
 import com.google.android.gms.maps.model.LatLng;
@@ -120,8 +119,6 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
                     String[] partsName = parts[1].split("-");
                     String firstName = partsName[0].trim();
                     String lastName = partsName[partsName.length - 1].trim();
-                    //Log.i("nikos2", firstName + " - " + lastName);
-                    //Toast.makeText(RoutesActivity.this, firstName + " - " + lastName, Toast.LENGTH_SHORT).show();
 
 
                     final Dialog dialog = new Dialog(RoutesActivity.this);
@@ -129,6 +126,7 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
                     dialog.setTitle("ΚΑΤΕΥΘΥΝΣΗ");
                     Button btn = (Button) dialog.findViewById(R.id.route1);
                     Button btn2 = (Button) dialog.findViewById(R.id.route2);
+                    Button btn3 = (Button) dialog.findViewById(R.id.route3);
                     btn.setText("Προς: " + firstName);
                     btn2.setText("Προς: " + lastName);
                     dialog.show();
@@ -141,6 +139,11 @@ public class RoutesActivity extends AppCompatActivity implements LoaderManager.L
                     btn2.setOnClickListener(new View.OnClickListener() {
                         public void onClick(View v) {
                             new GetRouteStops(getIdFromValue, "0").execute();
+                        }
+                    });
+                    btn3.setOnClickListener(new View.OnClickListener() {
+                        public void onClick(View v) {
+                            dialog.dismiss();
                         }
                     });
                 }

@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.RatingBar;
+import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -176,7 +177,10 @@ public class RateAppActivity extends AppCompatActivity implements LoaderManager.
         }
             @Override
         protected void onPostExecute(final Boolean success) {
-
+                Toast.makeText(RateAppActivity.this, "Μόλις Βαθμολογήσατε το SMARTT! Σας ευχαριστούμε!", Toast.LENGTH_SHORT).show();
+                RateAppActivity.this.finish();
+                Intent intent = new Intent(RateAppActivity.this, MapsActivity.class);
+                startActivity(intent);
         }
     }
 }

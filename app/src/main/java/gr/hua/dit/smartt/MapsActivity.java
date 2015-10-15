@@ -153,7 +153,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         }
         mActivityTitle = String.valueOf(ut.getEmailAddress());
         if(ut.getEmailAddress().equals("none")) {
-            getSupportActionBar().setTitle("Your Position");
+            getSupportActionBar().setTitle("Η Τοποθεσία μου");
         }
         mDrawerList = (ListView)findViewById(R.id.navList);
         mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
@@ -232,10 +232,9 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                         }
                     }
                 });
-                //listView.setOnItemClickListener(mOnItemClick);
                 listView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
                 dialog.setView(customView);
-                dialog.setPositiveButton("Back", new DialogInterface.OnClickListener() {
+                dialog.setPositiveButton("Πίσω", new DialogInterface.OnClickListener() {
 
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -315,9 +314,9 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
     private void addDrawerItems() {
 
-        final String[] osArray = { "Login", "Routes", "Give my location", "Rate SMARTT", "Exit SMARTT" };
-        final String[] osArrayLogin = { "Logout", "Routes", "Give my location", "Rate SMARTT", "Exit SMARTT" };
-        final String[] osArrayLoginGiveLocation = { "Logout", "Routes", "Stop give my location", "Rate SMARTT", "Exit SMARTT" };
+        final String[] osArray = { "Συνδεθείτε", "Διαδρομές", "Δώσε την τοποθεσία μου", "Βαθμολόγησε το Smartt", "Έξοδος" };
+        final String[] osArrayLogin = { "Αποσυνδεθείτε", "Διαδρομές", "Δώσε την τοποθεσία μου", "Βαθμολόγησε το Smartt", "Έξοδος" };
+        final String[] osArrayLoginGiveLocation = { "Αποσυνδεθείτε", "Διαδρομές", "Μην δίνεις την τοποθεσία μου", "Βαθμολόγησε το Smartt", "Έξοδος" };
 
         if(ut.getEmailAddress() != "none") {
             if(isStartGiveLocation) {
@@ -350,21 +349,15 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                         mAdapter.clear();
                         addDrawerItems();
                         setupDrawer();
-                        Toast.makeText(MapsActivity.this, "You just logged out!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MapsActivity.this, "Μόλις αποσυνδεθήκατε!", Toast.LENGTH_SHORT).show();
                     } else {
-//                        if (ut.getEmailAddress() != "none") {
-//                            Log.i("SV-email", String.valueOf(ut.getEmailAddress()));
-//                            Toast.makeText(MapsActivity.this, "Logged in as " + String.valueOf(ut.getEmailAddress()), Toast.LENGTH_SHORT).show();
-//                        } else {
                         MapsActivity.this.finish();
                         Intent intent = new Intent("gr.hua.dit.smartt.LOGIN");
                         startActivity(intent);
-//                        }
                     }
                 }
                 //Routes
                 if (id == 1) {
-                    //Toast.makeText(MapsActivity.this, "Routes!", Toast.LENGTH_SHORT).show();
                     MapsActivity.this.finish();
                     Intent intent = new Intent("gr.hua.dit.smartt.ROUTES");
                     startActivity(intent);
@@ -421,7 +414,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                                     }
                                 });
                                 dialog.setView(customView);
-                                dialog.setPositiveButton("Back", new DialogInterface.OnClickListener() {
+                                dialog.setPositiveButton("Πίσω", new DialogInterface.OnClickListener() {
 
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
@@ -437,7 +430,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                             }
                         }
                     }else {
-                        Toast.makeText(MapsActivity.this, "You have to Login first!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MapsActivity.this, "Θα πρέπει να συνδεθείτε πρώτα!", Toast.LENGTH_SHORT).show();
                     }
                 }
                 //Rate SMARTT
@@ -450,10 +443,10 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                             intent.putExtra("routedir", routeDIR);
                             startActivity(intent);
                         }else {
-                            Toast.makeText(MapsActivity.this, "Θα πρέπει να δίνετε τη τοποθεσία σας για να μπορέσετε να βαθμολογήσετε την εφαρμογή!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MapsActivity.this, "Θα πρέπει να δίνετε τη τοποθεσία σας για να μπορέσετε να βαθμολογήσετε την εφαρμογή!", Toast.LENGTH_LONG).show();
                         }
                     } else {
-                        Toast.makeText(MapsActivity.this, "Για να μπορέσετε να βαθμολογήσετε την εφαρμογή θα πρέπει να συνδεθείτε!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MapsActivity.this, "Για να μπορέσετε να βαθμολογήσετε την εφαρμογή θα πρέπει να συνδεθείτε!", Toast.LENGTH_LONG).show();
                     }
                 }
                 //Exit SMARTT
@@ -472,7 +465,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
             /** Called when a drawer has settled in a completely open state. */
             public void onDrawerOpened(View drawerView) {
                 super.onDrawerOpened(drawerView);
-                getSupportActionBar().setTitle("Navigation!");
+                getSupportActionBar().setTitle("Πλοήγηση!");
                 invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
             }
 
@@ -480,7 +473,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
             public void onDrawerClosed(View view) {
                 super.onDrawerClosed(view);
                 if(ut.getEmailAddress().equals("none")) {
-                    getSupportActionBar().setTitle("Your Position");
+                    getSupportActionBar().setTitle("Η Τοποθεσία μου");
                 }else {
                     getSupportActionBar().setTitle(mActivityTitle);
                 }
@@ -562,7 +555,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
             // check if map is created successfully or not
             if (mMap == null) {
                 Toast.makeText(getApplicationContext(),
-                        "Sorry! unable to create maps", Toast.LENGTH_SHORT)
+                        "Δυστυχώς υπάρχει πρόβλημα με τη σύνδεση. Παρακαλώ προσπαθήστε να ανοίξετε την εφαρμογή πάλι.", Toast.LENGTH_SHORT)
                         .show();
             }
             if((!nettracker.isGPSEnabled)&&isOnline()){
@@ -584,9 +577,9 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 if (mMap.getMyLocation() != null) {
                     Toast.makeText(
                             getApplicationContext(),
-                            "Accuracy " + String.valueOf(mMap.getMyLocation().getAccuracy()) + "\n" +
-                                    "Lat " + String.valueOf(mMap.getMyLocation().getLatitude()) + "\n" +
-                                    "Lon " + String.valueOf(mMap.getMyLocation().getLongitude()),
+                            "Ακρίβεια " + String.valueOf(mMap.getMyLocation().getAccuracy()) + "\n" +
+                                    "Γεωγρ. Πλάτος " + String.valueOf(mMap.getMyLocation().getLatitude()) + "\n" +
+                                    "Γεωγρ. Μήκος " + String.valueOf(mMap.getMyLocation().getLongitude()),
                             Toast.LENGTH_SHORT).show();
 
 
@@ -647,7 +640,6 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 if(!nettracker.isGPSEnabled) {
                     nettracker.showBadAccuracyAlert();
                 }else {
-                    Toast.makeText(getApplicationContext(), "message!", Toast.LENGTH_LONG).show();
                 }
             }
 
@@ -730,9 +722,6 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
             LoadnearstopsTask loadnearstopsTask = new LoadnearstopsTask();
             loadnearstopsTask.execute(latLng);
         }
-
-        Toast.makeText(MapsActivity.this, "Location changed", Toast.LENGTH_SHORT).show();
-
     }
 
 
@@ -1080,13 +1069,8 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
         timerTask = new TimerTask() {
             public void run() {
-
-                //use a handler to run a toast that shows the current timestamp
                 handler.post(new Runnable() {
                     public void run() {
-                        //get the current timeStamp
-                        Log.i("parametroi", "mesa sto loop ");
-                        //buslist.clear();
                         if(choice) {
                             new UpdateLocationTask(routeId,routeDirection, lat,lon).execute();
                         }else {

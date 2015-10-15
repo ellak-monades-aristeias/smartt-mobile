@@ -8,9 +8,9 @@
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:text="Here you can rate the app!"
+        android:text="Εδώ μπορείτε να βαθμολογήσετε το SMARTT!"
         android:layout_gravity="center_horizontal"
-        android:textSize="22sp"
+        android:textSize="17sp"
         android:paddingTop="5dp"/>
 
     <LinearLayout
@@ -22,7 +22,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Arrival Time"
+            android:text="Ώρα άφιξης"
             android:layout_gravity="center_horizontal"
             android:textSize="16sp"
             android:padding="10dp"/>
@@ -44,7 +44,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Comfort"
+            android:text="Άνεση"
             android:layout_gravity="center_horizontal"
             android:textSize="16sp"
             android:padding="10dp"/>
@@ -67,7 +67,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Route Duration"
+            android:text="Διάρκεια διαδρομής"
             android:layout_gravity="center_horizontal"
             android:textSize="16sp"
             android:padding="10dp"/>
@@ -90,7 +90,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Driver Rating"
+            android:text="Βαθμολογία οδήγησης"
             android:layout_gravity="center_horizontal"
             android:textSize="16sp"
             android:padding="10dp"/>
@@ -121,7 +121,7 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Βαθμολόγησε το SMARTT!"
+            android:text="Βαθμολόγησε!"
             android:id="@+id/ratebutton"/>
 
     </LinearLayout>
