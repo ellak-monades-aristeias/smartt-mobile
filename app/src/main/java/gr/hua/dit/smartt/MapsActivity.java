@@ -558,10 +558,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                         "Δυστυχώς υπάρχει πρόβλημα με τη σύνδεση. Παρακαλώ προσπαθήστε να ανοίξετε την εφαρμογή πάλι.", Toast.LENGTH_SHORT)
                         .show();
             }
-            if((!nettracker.isGPSEnabled)&&isOnline()){
-                nettracker.showSettingsAlert();
-            }
-            positioncheck();
+
         }
         mMap.setMyLocationEnabled(true);
 
@@ -636,12 +633,6 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
             nettracker.getLocation();
 
 
-            if(nettracker.appAccuracy > 100 && nettracker.appAccuracy!=999) {
-                if(!nettracker.isGPSEnabled) {
-                    nettracker.showBadAccuracyAlert();
-                }else {
-                }
-            }
 
             Location loc = new Location(String.valueOf(new LatLng(latitude, longitude)));
 

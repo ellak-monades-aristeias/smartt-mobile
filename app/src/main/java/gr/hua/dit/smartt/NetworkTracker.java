@@ -234,34 +234,6 @@ public class NetworkTracker extends Service {
     }
 
 
-    public void showBadAccuracyAlert() {
-        AlertDialog.Builder alertDialog = new AlertDialog.Builder(mContext);
-
-        // Setting Dialog Title
-        alertDialog.setTitle("Ðñïóï÷Þ!");
-
-        // Setting Dialog Message
-        alertDialog.setMessage("Ç ôïðïèåóßá óáò äåí Ý÷åé êáëÞ áêñßâåéá êáé ðïëý ðéèáíü íá åßíáé ëáíèáóìÝíç!\nÃéá ìåãáëýôåñç áêñßâåéá ôçò ôïðïèåóßáò óáò åíåñãïðïéÞóôå ôï GPS!");
-
-        // On pressing Settings button
-        alertDialog.setPositiveButton("Íáé", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                mContext.startActivity(intent);
-            }
-        });
-
-        // on pressing cancel button
-        alertDialog.setNegativeButton("¼÷é", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-            }
-        });
-
-        // Showing Alert Message
-        alertDialog.show();
-    }
-
     @Override
     public IBinder onBind(Intent arg0) {
         return null;
