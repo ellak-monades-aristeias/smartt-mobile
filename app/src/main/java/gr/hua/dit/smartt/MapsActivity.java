@@ -106,6 +106,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     ArrayList<GetStopsNearMe> buslist = new ArrayList<GetStopsNearMe>();
     String routeDIR;
     String routeID;
+    ArrayList<Marker> busMarkerList = new ArrayList<Marker>();
 
 
     public static final String TAG = MapsActivity.class.getSimpleName();
@@ -265,14 +266,23 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
             isFromRoutes = extra.getBoolean("isFromRouteValue");
             isStartGiveLocation = extra.getBoolean("isStartGiveLocation");
             if(extra.getBoolean("isFromRouteActivity")) {
+                for(int j=0; j<busMarkerList.size(); j++) {
+                    busMarkerList.get(j).remove();
+                }
+                busMarkerList.clear();
                 new LoadBus(extra.getString("routeid"),extra.getString("routedir")).execute();
             }else {
                 istracked = extra.getBoolean("tracked");
                 if (istracked) {
+                    for(int j=0; j<busMarkerList.size(); j++) {
+                        busMarkerList.get(j).remove();
+                    }
+                    busMarkerList.clear();
                     new LoadBus(extra.getString("routeid"), extra.getString("routedir")).execute();
                 }
             }
             routeStopsList = (ArrayList<GetStopsNearMe>) extra.getSerializable("routeStops");
+            Log.i("emfanisi routeStoplist ", routeStopsList.toString());
         }
 
         try {
@@ -370,7 +380,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                             //stopRepeatingTask();
                             //loop("","","","");
                             isStartGiveLocation = false;
-                            drawerlist.set(2, "Give my location");
+                            drawerlist.set(2, "Δώσε την τοποθεσία μου");
                             mAdapter.notifyDataSetChanged();
 
                             Log.i("parametroi", "isStartGiveLocation " + isStartGiveLocation);
@@ -1065,6 +1075,10 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                         if(choice) {
                             new UpdateLocationTask(routeId,routeDirection, lat,lon).execute();
                         }else {
+                            for(int j=0; j<busMarkerList.size(); j++) {
+                                busMarkerList.get(j).remove();
+                            }
+                            busMarkerList.clear();
                             new LoadBus(routeId,routeDirection).execute();
                         }
                     }
@@ -1150,6 +1164,10 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         @Override
         protected void onPostExecute(final Boolean success) {
             if(success) {
+                for(int j=0; j<busMarkerList.size(); j++) {
+                    busMarkerList.get(j).remove();
+                }
+                busMarkerList.clear();
                 new LoadBus(mrouteId,mrouteDirection).execute();
             }else {
                 Toast.makeText(MapsActivity.this, "Η τοποθεσία που δίνετε δεν αντιστοιχεί σε διαδρομή του ΟΑΣΑ!", Toast.LENGTH_SHORT).show();
@@ -1219,11 +1237,14 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         @Override
         protected void onPostExecute(ArrayList<GetStopsNearMe> myLatLng) {
             Log.i("RG-load bus success", "myLatLng size  " + myLatLng.size());
+
             for(int i=0; i<buslist.size(); i++) {
-                mMap.addMarker(new MarkerOptions().position(new LatLng(buslist.get(i).getStopLat(),buslist.get(i).getStopLng()))
+                Marker marker = mMap.addMarker(new MarkerOptions().position(new LatLng(buslist.get(i).getStopLat(), buslist.get(i).getStopLng()))
                         .icon(BitmapDescriptorFactory.fromResource(R.mipmap.bus))
                         .title(buslist.get(i).getStopName())
                         .snippet("Διαδρομή: " + buslist.get(i).getId()));
+                busMarkerList.add(marker);
+
             }
         }
 
