@@ -27,12 +27,16 @@ import java.util.Map;
 
 public class RateAppActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
-    String arrivalBarValue;
-    String comfortBarValue;
-    String routeDurationBarValue;
-    String driverRatingBarValue;
+    float arrivalBarValue;
+    float comfortBarValue;
+    float routeDurationBarValue;
+    float driverRatingBarValue;
     String routeID;
     String routeDIR;
+    RatingBar arrivalBar;
+    RatingBar comfortBar;
+    RatingBar routeDurationBar;
+    RatingBar driverRatingBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,35 +48,39 @@ public class RateAppActivity extends AppCompatActivity implements LoaderManager.
         routeID = extra.getString("routeid");
         routeDIR = extra.getString("routedir");
 
-        final RatingBar arrivalBar = (RatingBar) findViewById(R.id.arrivalBar);
+        arrivalBar = (RatingBar) findViewById(R.id.arrivalBar);
         arrivalBar.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v)
             {
-                arrivalBarValue = Float.toString(arrivalBar.getRating());
+                arrivalBarValue = arrivalBar.getRating();
+                Log.i("parametroi11", arrivalBar.getRating() + " - ");
             }
         });
 
-        final RatingBar comfortBar = (RatingBar) findViewById(R.id.comfortBar);
+        comfortBar = (RatingBar) findViewById(R.id.comfortBar);
         comfortBar.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v)
             {
-                comfortBarValue = Float.toString(comfortBar.getRating());
+                comfortBarValue = comfortBar.getRating();
+                Log.i("parametroi22", comfortBar.getRating() + " - ");
             }
         });
 
-        final RatingBar routeDurationBar = (RatingBar) findViewById(R.id.routeDurationBar);
+        routeDurationBar = (RatingBar) findViewById(R.id.routeDurationBar);
         routeDurationBar.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v)
             {
-                routeDurationBarValue = Float.toString(routeDurationBar.getRating());
+                routeDurationBarValue = routeDurationBar.getRating();
+                Log.i("parametroi33", routeDurationBarValue + " - ");
             }
         });
 
-        final RatingBar driverRatingBar = (RatingBar) findViewById(R.id.driverRatingBar);
+        driverRatingBar = (RatingBar) findViewById(R.id.driverRatingBar);
         driverRatingBar.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v)
             {
-                driverRatingBarValue = Float.toString(driverRatingBar.getRating());
+                driverRatingBarValue = driverRatingBar.getRating();
+                Log.i("parametroi44", driverRatingBarValue + " - ");
             }
         });
 
@@ -84,8 +92,8 @@ public class RateAppActivity extends AppCompatActivity implements LoaderManager.
             {
                 //DO SOMETHING! {RUN SOME FUNCTION ... DO CHECKS... ETC}
                 RateAppActivity.this.finish();
-                Intent intent = new Intent(RateAppActivity.this, MapsActivity.class);
-                startActivity(intent);
+                //Intent intent = new Intent(RateAppActivity.this, MapsActivity.class);
+                //startActivity(intent);
             }
         });
 
@@ -93,7 +101,7 @@ public class RateAppActivity extends AppCompatActivity implements LoaderManager.
             public void onClick(View v)
             {
                 //DO SOMETHING! {RUN SOME FUNCTION ... DO CHECKS... ETC}
-                new RateTask(ut.getEmailAddress(),routeID,routeDIR,arrivalBarValue,comfortBarValue,routeDurationBarValue,driverRatingBarValue).execute();
+                new RateTask(ut.getEmailAddress(),routeID,routeDIR,arrivalBar.getRating()+"",comfortBar.getRating()+"",routeDurationBar.getRating()+"",driverRatingBar.getRating()+"").execute();
             }
         });
 
@@ -149,7 +157,8 @@ public class RateAppActivity extends AppCompatActivity implements LoaderManager.
             params1.put("route_duration", mRouteDuration);
             params1.put("driver_rating", mDriverRating);
 
-
+            Log.i("parametroi", mEmail + " - " + mRoute +
+                    " / " + mDir + " - " + marrivalTime + " - " + mComfort+ " - " + mRouteDuration + " - " + mDriverRating);
             try {
                 HttpUtility.sendPostRequest(requestURL, params1);
 
@@ -166,13 +175,15 @@ public class RateAppActivity extends AppCompatActivity implements LoaderManager.
 
                     Log.i("RG-resrate", String.valueOf(success));
                 }
-                HttpUtility.disconnect();
+
 
             } catch (JSONException e) {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            HttpUtility.disconnect();
+
             return true;
         }
             @Override

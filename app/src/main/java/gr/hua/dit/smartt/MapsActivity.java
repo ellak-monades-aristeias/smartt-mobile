@@ -270,6 +270,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                     busMarkerList.get(j).remove();
                 }
                 busMarkerList.clear();
+                buslist.clear();
                 new LoadBus(extra.getString("routeid"),extra.getString("routedir")).execute();
             }else {
                 istracked = extra.getBoolean("tracked");
@@ -278,6 +279,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                         busMarkerList.get(j).remove();
                     }
                     busMarkerList.clear();
+                    buslist.clear();
                     new LoadBus(extra.getString("routeid"), extra.getString("routedir")).execute();
                 }
             }
@@ -286,7 +288,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         }
 
         try {
-            initilizeMap();
+           // initilizeMap();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -313,7 +315,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
     protected void onPause() {
         super.onPause();
         mLocationProvider.disconnect();
-        initilizeMap();
+        //initilizeMap();
     }
 
     @Override
@@ -376,7 +378,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 if (id == 2) {
                     if (ut.getEmailAddress() != "none") {
                         if(isStartGiveLocation) {
-                            MapsActivity.this.stoptimertask();
+                            stoptimertask();
                             //stopRepeatingTask();
                             //loop("","","","");
                             isStartGiveLocation = false;
@@ -446,8 +448,8 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 //Rate SMARTT
                 if (id == 3) {
                     if (ut.getEmailAddress() != "none") {
-                        if(istracked) {
-                            MapsActivity.this.finish();
+                        if(isStartGiveLocation) {
+                            //MapsActivity.this.finish();
                             Intent intent = new Intent("gr.hua.dit.smartt.RATE");
                             intent.putExtra("routeid", routeID);
                             intent.putExtra("routedir", routeDIR);
@@ -711,17 +713,17 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                 .icon(BitmapDescriptorFactory.fromResource(R.mipmap.passenger));
         mMap.addMarker(options);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-        if(isStartGiveLocation) {
-            MapsActivity.this.startTimer(routeID,routeDIR,
-                    String.valueOf(options.getPosition().latitude), String.valueOf(options.getPosition().longitude),true);
-        }
-        if(istracked) {
-            MapsActivity.this.startTimer(routeID,routeDIR,
-                    String.valueOf(options.getPosition().latitude), String.valueOf(options.getPosition().longitude),false);
-        }
+
         if(!isFromRoutes) {
             LoadnearstopsTask loadnearstopsTask = new LoadnearstopsTask();
             loadnearstopsTask.execute(latLng);
+        }
+        if(isStartGiveLocation) {
+            startTimer(routeID,routeDIR,
+                    String.valueOf(options.getPosition().latitude), String.valueOf(options.getPosition().longitude),true);
+        }else if(istracked) {
+            startTimer(routeID, routeDIR,
+                    String.valueOf(options.getPosition().latitude), String.valueOf(options.getPosition().longitude), false);
         }
     }
 
@@ -1045,20 +1047,22 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
     public void startTimer(final String routeId, final String routeDirection, final String lat, final String lon,final boolean choice) {
         //set a new Timer
+        if (timer != null) {
+            stoptimertask();
+        }
         timer = new Timer();
 
         //initialize the TimerTask's job
-        initializeTimerTask(routeId,routeDirection, lat,lon,choice);
+        initializeTimerTask(routeId, routeDirection, lat, lon, choice);
 
         //schedule the timer, after the first 5000ms the TimerTask will run every 10000ms
         timer.schedule(timerTask, 0, 10000); //
-        Log.i("parametroi ", "start timer");
+        Log.i("parametroi ", "start timer " + this.toString());
     }
 
     public void stoptimertask() {
         //stop the timer, if it's not already null
         Log.i("parametroi ", "in stop timer");
-        istracked=false;
         if (timer != null) {
             Log.i("parametroi ", "if in stop timer");
             timer.cancel();
@@ -1079,6 +1083,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
                                 busMarkerList.get(j).remove();
                             }
                             busMarkerList.clear();
+                            buslist.clear();
                             new LoadBus(routeId,routeDirection).execute();
                         }
                     }
@@ -1164,10 +1169,12 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         @Override
         protected void onPostExecute(final Boolean success) {
             if(success) {
+                istracked=true;
                 for(int j=0; j<busMarkerList.size(); j++) {
                     busMarkerList.get(j).remove();
                 }
                 busMarkerList.clear();
+                buslist.clear();
                 new LoadBus(mrouteId,mrouteDirection).execute();
             }else {
                 Toast.makeText(MapsActivity.this, "Η τοποθεσία που δίνετε δεν αντιστοιχεί σε διαδρομή του ΟΑΣΑ!", Toast.LENGTH_SHORT).show();
@@ -1194,7 +1201,7 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
         @Override
         protected ArrayList<GetStopsNearMe> doInBackground(String... Params) {
 
-            buslist.clear();
+
             String requestURL = "http://83.212.116.159/smartt/backend/api/routes/buslocation?route=" + mroute + "&dir=" + mdir;
 
             try {
@@ -1236,8 +1243,6 @@ public class MapsActivity extends AppCompatActivity implements LocationProvider.
 
         @Override
         protected void onPostExecute(ArrayList<GetStopsNearMe> myLatLng) {
-            Log.i("RG-load bus success", "myLatLng size  " + myLatLng.size());
-
             for(int i=0; i<buslist.size(); i++) {
                 Marker marker = mMap.addMarker(new MarkerOptions().position(new LatLng(buslist.get(i).getStopLat(), buslist.get(i).getStopLng()))
                         .icon(BitmapDescriptorFactory.fromResource(R.mipmap.bus))

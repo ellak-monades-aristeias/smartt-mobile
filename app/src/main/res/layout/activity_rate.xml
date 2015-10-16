@@ -8,7 +8,7 @@
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:text="Εδώ μπορείτε να βαθμολογήσετε το SMARTT!"
+        android:text="Βαθμολογήστε το SMARTT!"
         android:layout_gravity="center_horizontal"
         android:textSize="17sp"
         android:paddingTop="5dp"/>
