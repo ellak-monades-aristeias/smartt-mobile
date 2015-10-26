@@ -41,3 +41,5 @@ Repositories:
 Mobile application https://github.com/ellak-monades-aristeias/smartt-mobile
 
 Backend https://github.com/tsadimas/smartt 
+
+[Οδηγός Χρήσης] (https://github.com/tsadimas/smartt/blob/master/%CE%BF%CE%B4%CE%B7%CE%B3%CF%8C%CF%82%20%CF%87%CF%81%CE%AE%CF%83%CE%B7%CF%82.pdf)
